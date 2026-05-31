@@ -15,14 +15,18 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (ready && user) navigate({ to: "/dashboard" });
+    if (ready && user) {
+      if (user.role === "Admin") navigate({ to: "/dashboard" });
+      else navigate({ to: "/dashboard" });
+    }
   }, [ready, user, navigate]);
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const res = login(email, password);
+    setError(null);
+    const res = await login(email, password);
     if (!res.ok) setError(res.error);
-    else navigate({ to: "/dashboard" });
+    // Navigation handled by useEffect after login
   };
 
   const fill = (e: string, p: string) => {
@@ -41,7 +45,7 @@ function LoginPage() {
           <div className="text-lg font-semibold">CreditIQ</div>
         </Link>
 
-        <div className="bg-card border border-border rounded-2xl p-7 shadow-[var(--shadow-card)]">
+        <div className="bg-card border border-border rounded-2xl p-7 shadow-(--shadow-card)">
           <h1 className="text-xl font-semibold">Welcome back</h1>
           <p className="text-sm text-muted-foreground mt-1">Sign in to access the risk dashboard.</p>
 
@@ -106,7 +110,8 @@ function LoginPage() {
           </div>
         </div>
 
-        <div className="text-center text-xs text-muted-foreground mt-6">
+        <div className="text-center text-xs text-muted-foreground mt-6 flex flex-col gap-2">
+          <Link to="/signup" className="hover:text-foreground transition">Don’t have an account? Sign up</Link>
           <Link to="/" className="hover:text-foreground transition">← Back to home</Link>
         </div>
       </div>

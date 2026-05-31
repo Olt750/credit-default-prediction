@@ -19,27 +19,20 @@ export const monthlyActivity = [
   { month: "May", predictions: 820, approved: 590 },
   { month: "Jun", predictions: 910, approved: 640 },
   { month: "Jul", predictions: 980, approved: 700 },
-  { month: "Aug", predictions: 1120, approved: 810 },
 ];
 
-export const loanStatus = [
-  { status: "Approved", count: 8961 },
-  { status: "Pending", count: 1240 },
-  { status: "Rejected", count: 2279 },
-];
-
-export type RiskLevel = "Low" | "Medium" | "High";
-
-export const recentPredictions: {
+export type PredictionRow = {
   id: string;
   client: string;
   amount: number;
   score: number;
-  level: RiskLevel;
+  level: "Low" | "Medium" | "High";
   model: string;
   date: string;
   status: "Approved" | "Pending" | "Rejected";
-}[] = [
+};
+
+export const recentPredictions: PredictionRow[] = [
   { id: "PR-1042", client: "Arlind Hoxha", amount: 18500, score: 82, level: "High", model: "Random Forest", date: "2026-05-22", status: "Rejected" },
   { id: "PR-1041", client: "Era Krasniqi", amount: 9200, score: 24, level: "Low", model: "Neural Network", date: "2026-05-22", status: "Approved" },
   { id: "PR-1040", client: "Bledar Shehu", amount: 45000, score: 61, level: "Medium", model: "Logistic Regression", date: "2026-05-21", status: "Pending" },

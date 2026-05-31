@@ -2,7 +2,12 @@ import { recentPredictions } from "@/data/mockData";
 import { RiskBadge, StatusBadge } from "./RiskBadge";
 
 export function PredictionTable({ limit, withAction = false }: { limit?: number; withAction?: boolean }) {
-  const rows = limit ? recentPredictions.slice(0, limit) : recentPredictions;
+  const rows = Array.isArray(recentPredictions) && recentPredictions.length > 0
+    ? (limit ? recentPredictions.slice(0, limit) : recentPredictions)
+    : [];
+  if (!rows.length) {
+    return <div className="p-4 text-center text-muted-foreground">No predictions available.</div>;
+  }
   return (
     <div className="overflow-x-auto -mx-5">
       <table className="w-full text-sm">
