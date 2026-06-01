@@ -18,6 +18,7 @@ namespace CreditDefault.Api.Configuration
             services.AddScoped<JwtService>();
             services.AddScoped<PasswordService>();
             services.AddScoped<PredictionEngine>();
+            services.AddScoped<PythonCreditRiskPredictionService>();
             return services;
         }
     }

@@ -18,12 +18,30 @@ namespace CreditDefault.Api.Controllers
         private readonly IPredictionRepository _predictionRepo;
         private readonly IUserRepository _userRepo;
         private readonly PredictionEngine _engine;
+        private readonly PythonCreditRiskPredictionService _pythonPredictionService;
 
-        public PredictionsController(IPredictionRepository predictionRepo, IUserRepository userRepo, PredictionEngine engine)
+        public PredictionsController(
+            IPredictionRepository predictionRepo,
+            IUserRepository userRepo,
+            PredictionEngine engine,
+            PythonCreditRiskPredictionService pythonPredictionService)
         {
             _predictionRepo = predictionRepo;
             _userRepo = userRepo;
             _engine = engine;
+            _pythonPredictionService = pythonPredictionService;
+        }
+
+        [HttpPost("predict")]
+        public async Task<IActionResult> Predict(CreditRiskPredictionRequestDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
+            var result = await _pythonPredictionService.PredictAsync(dto);
+            return Ok(result);
         }
 
         [HttpPost]
