@@ -51,28 +51,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Seed admin user
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
-    var adminEmail = "admin@credit.com";
-    if (!db.Users.Any(u => u.Email == adminEmail))
-    {
-        var passwordService = scope.ServiceProvider.GetRequiredService<CreditDefault.Api.Services.PasswordService>();
-        db.Users.Add(new CreditDefault.Api.Models.User
-        {
-            Id = Guid.NewGuid(),
-            FullName = "System Admin",
-            Email = adminEmail,
-            PasswordHash = passwordService.HashPassword("admin123"),
-            PhoneNumber = "",
-            Role = "Admin",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        });
-        db.SaveChanges();
-    }
 }
 
 app.Run();

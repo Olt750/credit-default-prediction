@@ -1,4 +1,4 @@
-import type { RiskLevel } from "@/data/mockData";
+type RiskLevel = "Low" | "Medium" | "High";
 
 export function RiskBadge({ level }: { level: RiskLevel | string }) {
   const map: Record<string, string> = {

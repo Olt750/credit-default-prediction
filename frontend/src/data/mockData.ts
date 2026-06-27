@@ -1,48 +1,3 @@
-export const stats = {
-  totalClients: 12480,
-  highRiskClients: 1842,
-  approvedLoans: 8961,
-  avgDefaultRisk: 23.4,
-};
-
-export const riskDistribution = [
-  { name: "Low", value: 6420, color: "var(--color-success)" },
-  { name: "Medium", value: 4218, color: "var(--color-warning)" },
-  { name: "High", value: 1842, color: "var(--color-destructive)" },
-];
-
-export const monthlyActivity = [
-  { month: "Jan", predictions: 420, approved: 290 },
-  { month: "Feb", predictions: 510, approved: 360 },
-  { month: "Mar", predictions: 680, approved: 470 },
-  { month: "Apr", predictions: 740, approved: 510 },
-  { month: "May", predictions: 820, approved: 590 },
-  { month: "Jun", predictions: 910, approved: 640 },
-  { month: "Jul", predictions: 980, approved: 700 },
-];
-
-export type PredictionRow = {
-  id: string;
-  client: string;
-  amount: number;
-  score: number;
-  level: "Low" | "Medium" | "High";
-  model: string;
-  date: string;
-  status: "Approved" | "Pending" | "Rejected";
-};
-
-export const recentPredictions: PredictionRow[] = [
-  { id: "PR-1042", client: "Arlind Hoxha", amount: 18500, score: 82, level: "High", model: "Random Forest", date: "2026-05-22", status: "Rejected" },
-  { id: "PR-1041", client: "Era Krasniqi", amount: 9200, score: 24, level: "Low", model: "Neural Network", date: "2026-05-22", status: "Approved" },
-  { id: "PR-1040", client: "Bledar Shehu", amount: 45000, score: 61, level: "Medium", model: "Logistic Regression", date: "2026-05-21", status: "Pending" },
-  { id: "PR-1039", client: "Mira Dervishi", amount: 12000, score: 18, level: "Low", model: "Random Forest", date: "2026-05-21", status: "Approved" },
-  { id: "PR-1038", client: "Genti Vata", amount: 30500, score: 74, level: "High", model: "Decision Tree", date: "2026-05-20", status: "Rejected" },
-  { id: "PR-1037", client: "Albana Leka", amount: 7800, score: 41, level: "Medium", model: "Neural Network", date: "2026-05-20", status: "Approved" },
-  { id: "PR-1036", client: "Driton Berisha", amount: 22000, score: 33, level: "Low", model: "Random Forest", date: "2026-05-19", status: "Approved" },
-  { id: "PR-1035", client: "Saimir Gjoka", amount: 55000, score: 88, level: "High", model: "Neural Network", date: "2026-05-19", status: "Rejected" },
-];
-
 export const modelMetrics = [
   { model: "Logistic Regression", accuracy: 0.84, precision: 0.81, recall: 0.78, f1: 0.79 },
   { model: "Decision Tree", accuracy: 0.86, precision: 0.83, recall: 0.82, f1: 0.82 },
@@ -107,8 +62,6 @@ export type AppUserRow = {
 };
 
 export const appUsers: AppUserRow[] = [
-  { id: "U-001", name: "Admin Account", email: "admin@credit.com", role: "Admin", status: "Active", createdAt: "2025-11-02" },
-  { id: "U-002", name: "Standard User", email: "user@credit.com", role: "User", status: "Active", createdAt: "2025-12-14" },
   { id: "U-003", name: "Anita Rama", email: "anita.rama@credit.com", role: "Analyst", status: "Active", createdAt: "2026-01-08" },
   { id: "U-004", name: "Bledar Shehu", email: "bledar.shehu@credit.com", role: "User", status: "Disabled", createdAt: "2026-01-22" },
   { id: "U-005", name: "Era Krasniqi", email: "era.krasniqi@credit.com", role: "Analyst", status: "Active", createdAt: "2026-02-11" },

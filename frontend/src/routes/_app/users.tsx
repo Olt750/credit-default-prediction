@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Eye, Pencil, Ban, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
-import { appUsers } from "@/data/mockData";
+import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/users")({
@@ -21,13 +21,50 @@ const roleStyle: Record<string, string> = {
   User: "bg-muted text-muted-foreground",
 };
 
+type AppUserRow = {
+  id: string;
+  fullName?: string;
+  name?: string;
+  email: string;
+  role: "Admin" | "User" | "Analyst";
+  createdAt?: string;
+};
+
 function UsersPage() {
   const { user, ready } = useAuth();
   const navigate = useNavigate();
+  const [users, setUsers] = useState<AppUserRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (ready && user && user.role !== "Admin") navigate({ to: "/dashboard" });
   }, [ready, user, navigate]);
+
+  useEffect(() => {
+    if (!ready || !user || user.role !== "Admin") return;
+
+    async function loadUsers() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await apiFetch("/admin/users");
+
+        if (!res.ok) {
+          throw new Error("Failed to load users.");
+        }
+
+        setUsers(await res.json());
+      } catch (err: any) {
+        setError(err.message || "Failed to load users.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadUsers();
+  }, [ready, user]);
 
   if (!user || user.role !== "Admin") return null;
 
@@ -46,6 +83,12 @@ function UsersPage() {
         }
       />
 
+      {error && (
+        <div className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
       <div className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -60,55 +103,75 @@ function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {appUsers.map((u) => (
-                <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition">
-                  <td className="py-3 px-5">
-                    <div className="flex items-center gap-3">
-                      <div className="size-8 rounded-lg bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">
-                        {u.name.split(" ").map((s) => s[0]).join("").slice(0, 2)}
-                      </div>
-                      <div className="font-medium">{u.name}</div>
-                    </div>
-                  </td>
-                  <td className="py-3 pr-4 text-muted-foreground">{u.email}</td>
-                  <td className="py-3 pr-4">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${roleStyle[u.role] ?? ""}`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${statusStyle[u.status] ?? ""}`}>
-                      {u.status}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 text-muted-foreground">{u.createdAt}</td>
-                  <td className="py-3 pr-5">
-                    <div className="flex items-center gap-1 justify-end">
-                      <button
-                        onClick={() => handle("View", u.name)}
-                        className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition"
-                        title="View"
-                      >
-                        <Eye className="size-4" />
-                      </button>
-                      <button
-                        onClick={() => handle("Edit", u.name)}
-                        className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition"
-                        title="Edit"
-                      >
-                        <Pencil className="size-4" />
-                      </button>
-                      <button
-                        onClick={() => handle("Disable", u.name)}
-                        className="size-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive flex items-center justify-center transition"
-                        title="Disable"
-                      >
-                        <Ban className="size-4" />
-                      </button>
-                    </div>
+              {loading && (
+                <tr>
+                  <td colSpan={6} className="py-6 px-5 text-center text-muted-foreground">
+                    Loading users...
                   </td>
                 </tr>
-              ))}
+              )}
+              {!loading && !users.length && (
+                <tr>
+                  <td colSpan={6} className="py-6 px-5 text-center text-muted-foreground">
+                    No users found.
+                  </td>
+                </tr>
+              )}
+              {!loading && users.map((u) => {
+                const name = u.fullName ?? u.name ?? u.email;
+
+                return (
+                  <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition">
+                    <td className="py-3 px-5">
+                      <div className="flex items-center gap-3">
+                        <div className="size-8 rounded-lg bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">
+                          {name.split(" ").map((s) => s[0]).join("").slice(0, 2)}
+                        </div>
+                        <div className="font-medium">{name}</div>
+                      </div>
+                    </td>
+                    <td className="py-3 pr-4 text-muted-foreground">{u.email}</td>
+                    <td className="py-3 pr-4">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${roleStyle[u.role] ?? ""}`}>
+                        {u.role}
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${statusStyle.Active}`}>
+                        Active
+                      </span>
+                    </td>
+                    <td className="py-3 pr-4 text-muted-foreground">
+                      {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : ""}
+                    </td>
+                    <td className="py-3 pr-5">
+                      <div className="flex items-center gap-1 justify-end">
+                        <button
+                          onClick={() => handle("View", name)}
+                          className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition"
+                          title="View"
+                        >
+                          <Eye className="size-4" />
+                        </button>
+                        <button
+                          onClick={() => handle("Edit", name)}
+                          className="size-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition"
+                          title="Edit"
+                        >
+                          <Pencil className="size-4" />
+                        </button>
+                        <button
+                          onClick={() => handle("Disable", name)}
+                          className="size-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive flex items-center justify-center transition"
+                          title="Disable"
+                        >
+                          <Ban className="size-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
