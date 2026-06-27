@@ -24,7 +24,9 @@ namespace CreditDefault.Api.Services
         public async Task<CreditRiskPredictionResponseDto> PredictAsync(CreditRiskPredictionRequestDto request)
         {
             var scriptPath = ResolvePredictionScriptPath();
-            var pythonExecutable = _configuration["ML:PythonExecutable"] ?? "python";
+            var pythonExecutable = Environment.GetEnvironmentVariable("PYTHON_EXECUTABLE_PATH")
+                ?? _configuration["ML:PythonExecutable"]
+                ?? "python";
             var payload = JsonSerializer.Serialize(request, new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -71,7 +73,8 @@ namespace CreditDefault.Api.Services
 
         private string ResolvePredictionScriptPath()
         {
-            var configuredPath = _configuration["ML:PredictionScriptPath"];
+            var configuredPath = Environment.GetEnvironmentVariable("ML_SCRIPT_PATH")
+                ?? _configuration["ML:PredictionScriptPath"];
             if (!string.IsNullOrWhiteSpace(configuredPath))
             {
                 return Path.GetFullPath(configuredPath);

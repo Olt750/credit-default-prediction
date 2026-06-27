@@ -1,13 +1,10 @@
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using CreditDefault.Api.DTOs;
 using CreditDefault.Api.Interfaces;
-using CreditDefault.Api.Models;
 using CreditDefault.Api.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CreditDefault.Api.Controllers
 {
@@ -15,48 +12,59 @@ namespace CreditDefault.Api.Controllers
     [Route("api/auth")]
     public class AuthController : ControllerBase
     {
+        private readonly AuthService _authService;
         private readonly IUserRepository _userRepo;
-        private readonly JwtService _jwtService;
-        private readonly PasswordService _passwordService;
 
-        public AuthController(IUserRepository userRepo, JwtService jwtService, PasswordService passwordService)
+        public AuthController(AuthService authService, IUserRepository userRepo)
         {
+            _authService = authService;
             _userRepo = userRepo;
-            _jwtService = jwtService;
-            _passwordService = passwordService;
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
-            if (dto.Password != dto.ConfirmPassword)
-                return BadRequest(new { error = "Passwords do not match." });
-            if (await _userRepo.GetByEmailAsync(dto.Email) != null)
-                return BadRequest(new { error = "Email already registered." });
-            var user = new User
+            try
             {
-                Id = Guid.NewGuid(),
-                FullName = dto.FullName,
-                Email = dto.Email,
-                PasswordHash = _passwordService.HashPassword(dto.Password),
-                PhoneNumber = dto.PhoneNumber,
-                Role = "User",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            await _userRepo.AddAsync(user);
-            var token = _jwtService.GenerateToken(user);
-            return Ok(new { token, user = new { user.Id, user.FullName, user.Email, user.Role }, message = "Registration successful." });
+                return Ok(await _authService.RegisterAsync(dto, GetIpAddress()));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
-            var user = await _userRepo.GetByEmailAsync(dto.Email);
-            if (user == null || !_passwordService.VerifyPassword(dto.Password, user.PasswordHash))
+            try
+            {
+                return Ok(await _authService.LoginAsync(dto, GetIpAddress()));
+            }
+            catch (UnauthorizedAccessException)
+            {
                 return Unauthorized(new { error = "Invalid credentials." });
-            var token = _jwtService.GenerateToken(user);
-            return Ok(new { token, user = new { user.Id, user.FullName, user.Email, user.Role } });
+            }
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh(RefreshTokenRequestDto dto)
+        {
+            try
+            {
+                return Ok(await _authService.RefreshAsync(dto.RefreshToken, GetIpAddress()));
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized(new { error = "Invalid refresh token." });
+            }
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout(LogoutRequestDto dto)
+        {
+            await _authService.LogoutAsync(dto.RefreshToken, GetIpAddress());
+            return Ok(new { message = "Logged out." });
         }
 
         [HttpGet("me")]
@@ -67,7 +75,11 @@ namespace CreditDefault.Api.Controllers
             if (userId == null) return Unauthorized();
             var user = await _userRepo.GetByIdAsync(Guid.Parse(userId));
             if (user == null) return Unauthorized();
-            return Ok(new { user.Id, user.FullName, user.Email, user.Role });
+
+            var roles = user.UserRoles.Select(ur => ur.Role.Name).Distinct().ToList();
+            return Ok(new { user.Id, user.FullName, user.Email, Role = roles.FirstOrDefault() ?? user.Role, Roles = roles });
         }
+
+        private string? GetIpAddress() => HttpContext.Connection.RemoteIpAddress?.ToString();
     }
 }

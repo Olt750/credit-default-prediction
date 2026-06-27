@@ -9,13 +9,14 @@ import {
 
 import {
   API_BASE_URL,
+  REFRESH_TOKEN_KEY,
   TOKEN_KEY,
   USER_STORAGE_KEY,
   apiFetch,
   clearAuthStorage,
 } from "./api";
 
-export type Role = "Admin" | "User";
+export type Role = "Admin" | "User" | "Manager";
 
 export type AuthUser = {
   name: string;
@@ -115,7 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
           }
 
-          localStorage.setItem(TOKEN_KEY, data.token);
+          localStorage.setItem(TOKEN_KEY, data.accessToken ?? data.token);
+          if (data.refreshToken) {
+            localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+          }
 
           const safeUser: AuthUser = {
             name: data.user?.fullName ?? data.fullName,
@@ -160,8 +164,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
           }
 
-          if (data.token) {
-            localStorage.setItem(TOKEN_KEY, data.token);
+          const accessToken = data.accessToken ?? data.token;
+          if (accessToken) {
+            localStorage.setItem(TOKEN_KEY, accessToken);
+            if (data.refreshToken) {
+              localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+            }
 
             const safeUser: AuthUser = {
               name: data.user?.fullName ?? data.fullName ?? formData.fullName,
@@ -185,6 +193,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
 
       logout: () => {
+        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+        if (refreshToken) {
+          fetch(`${API_BASE_URL}/auth/logout`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken }),
+          }).catch((error) => console.error("Logout error:", error));
+        }
         clearAuthStorage();
         setUser(null);
       },

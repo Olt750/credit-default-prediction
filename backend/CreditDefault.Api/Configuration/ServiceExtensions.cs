@@ -10,16 +10,34 @@ namespace CreditDefault.Api.Configuration
     {
         public static IServiceCollection AddAppServices(this IServiceCollection services, IConfiguration config)
         {
+            var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
+                ?? config.GetConnectionString("DefaultConnection");
+
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException("Database connection string is not configured. Set DB_CONNECTION_STRING or ConnectionStrings:DefaultConnection.");
+            }
+
             services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(connectionString));
+            services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IPredictionRepository, PredictionRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+            services.AddScoped<IRoleRepository, RoleRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<JwtService>();
             services.AddScoped<PasswordService>();
+            services.AddScoped<AuthService>();
+            services.AddScoped<RefreshTokenService>();
             services.AddScoped<PredictionEngine>();
             services.AddScoped<PythonCreditRiskPredictionService>();
             services.AddScoped<DashboardService>();
+            services.AddScoped<AuditLogService>();
+            services.AddScoped<NotificationService>();
+            services.AddScoped<SettingService>();
+            services.AddScoped<FileRecordService>();
             return services;
         }
     }

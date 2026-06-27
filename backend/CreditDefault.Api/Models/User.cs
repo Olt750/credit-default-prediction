@@ -13,7 +13,12 @@ namespace CreditDefault.Api.Models
         public string Role { get; set; } = "User";
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        public ICollection<Prediction> Predictions { get; set; }
+        public ICollection<Prediction> Predictions { get; set; } = new List<Prediction>();
+        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+        public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        public ICollection<UserActivity> UserActivities { get; set; } = new List<UserActivity>();
+        public ICollection<FileRecord> Files { get; set; } = new List<FileRecord>();
         public ClientProfile ClientProfile { get; set; }
     }
 }

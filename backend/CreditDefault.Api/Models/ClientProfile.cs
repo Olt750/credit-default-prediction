@@ -25,5 +25,11 @@ namespace CreditDefault.Api.Models
         public decimal DebtToIncomeRatio { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public ICollection<LoanApplication> LoanApplications { get; set; } = new List<LoanApplication>();
+        public ICollection<EmploymentInfo> EmploymentInfos { get; set; } = new List<EmploymentInfo>();
+        public ICollection<IncomeSource> IncomeSources { get; set; } = new List<IncomeSource>();
+        public ICollection<DebtObligation> DebtObligations { get; set; } = new List<DebtObligation>();
+        public ICollection<CreditScoreRecord> CreditScores { get; set; } = new List<CreditScoreRecord>();
+        public ICollection<ClientDocument> ClientDocuments { get; set; } = new List<ClientDocument>();
     }
 }

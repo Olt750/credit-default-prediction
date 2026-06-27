@@ -30,5 +30,6 @@ namespace CreditDefault.Api.Models
         public string LoanStatus { get; set; } = string.Empty;
         public string ExplanationMessage { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public ICollection<PredictionFactor> PredictionFactors { get; set; } = new List<PredictionFactor>();
     }
 }
