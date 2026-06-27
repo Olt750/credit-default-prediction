@@ -48,6 +48,80 @@ namespace CreditDefault.Api.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("CreditDefault.Api.Models.ClientProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Age")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("AnnualIncome")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreditScore")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("DebtToIncomeRatio")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("Education")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmploymentStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("LoanAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("LoanTermMonths")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MaritalStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("MonthlyCarLoanPayment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MonthlyCreditCardPayment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MonthlyMortgageOrRentPayment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MonthlyOtherDebtPayment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MonthlyPersonalLoanPayment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PreviousDefaults")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalMonthlyDebt")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("ClientProfiles");
+                });
+
             modelBuilder.Entity("CreditDefault.Api.Models.Prediction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -62,6 +136,13 @@ namespace CreditDefault.Api.Migrations
 
                     b.Property<int>("CreditScore")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("DebtToIncomeRatio")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("Education")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EmploymentStatus")
                         .IsRequired()
@@ -80,12 +161,38 @@ namespace CreditDefault.Api.Migrations
                     b.Property<decimal>("LoanAmount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("LoanStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("LoanTerm")
                         .HasColumnType("int");
+
+                    b.Property<string>("MaritalStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("MonthlyCarLoanPayment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MonthlyCreditCardPayment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MonthlyMortgageOrRentPayment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MonthlyOtherDebtPayment")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MonthlyPersonalLoanPayment")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("PaymentHistory")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PreviousDefaults")
+                        .HasColumnType("int");
 
                     b.Property<string>("RiskLevel")
                         .IsRequired()
@@ -93,6 +200,9 @@ namespace CreditDefault.Api.Migrations
 
                     b.Property<int>("RiskScore")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("TotalMonthlyDebt")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -155,8 +265,21 @@ namespace CreditDefault.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("CreditDefault.Api.Models.ClientProfile", b =>
+                {
+                    b.HasOne("CreditDefault.Api.Models.User", "User")
+                        .WithOne("ClientProfile")
+                        .HasForeignKey("CreditDefault.Api.Models.ClientProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CreditDefault.Api.Models.User", b =>
                 {
+                    b.Navigation("ClientProfile");
+
                     b.Navigation("Predictions");
                 });
 #pragma warning restore 612, 618

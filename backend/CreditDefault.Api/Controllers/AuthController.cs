@@ -45,7 +45,8 @@ namespace CreditDefault.Api.Controllers
                 UpdatedAt = DateTime.UtcNow
             };
             await _userRepo.AddAsync(user);
-            return Ok(new { message = "Registration successful." });
+            var token = _jwtService.GenerateToken(user);
+            return Ok(new { token, user = new { user.Id, user.FullName, user.Email, user.Role }, message = "Registration successful." });
         }
 
         [HttpPost("login")]

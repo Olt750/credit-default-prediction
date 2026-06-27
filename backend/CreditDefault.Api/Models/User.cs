@@ -14,5 +14,6 @@ namespace CreditDefault.Api.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public ICollection<Prediction> Predictions { get; set; }
+        public ClientProfile ClientProfile { get; set; }
     }
 }

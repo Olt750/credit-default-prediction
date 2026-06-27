@@ -160,6 +160,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
           }
 
+          if (data.token) {
+            localStorage.setItem(TOKEN_KEY, data.token);
+
+            const safeUser: AuthUser = {
+              name: data.user?.fullName ?? data.fullName ?? formData.fullName,
+              email: data.user?.email ?? formData.email,
+              role: data.user?.role ?? "User",
+            };
+
+            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(safeUser));
+            setUser(safeUser);
+          }
+
           return { ok: true };
         } catch (error) {
           console.error(error);
