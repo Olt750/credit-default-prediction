@@ -13,6 +13,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (ready && user) {
@@ -23,16 +24,17 @@ function LoginPage() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    setError(null);
-    const res = await login(email, password);
-    if (!res.ok) setError(res.error);
-    // Navigation handled by useEffect after login
-  };
+    if (loading) return;
 
-  const fill = (e: string, p: string) => {
-    setEmail(e);
-    setPassword(p);
+    setLoading(true);
     setError(null);
+
+    try {
+      const res = await login(email, password);
+      if (!res.ok) setError(res.error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -81,33 +83,12 @@ function LoginPage() {
 
             <button
               type="submit"
+              disabled={loading}
               className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition flex items-center justify-center gap-2"
             >
-              Sign in <ArrowRight className="size-4" />
+              {loading ? "Signing in..." : "Sign in"} <ArrowRight className="size-4" />
             </button>
           </form>
-
-          <div className="mt-6 pt-5 border-t border-border">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Demo accounts</div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => fill("user@credit.com", "user123")}
-                className="rounded-lg border border-border p-3 text-left hover:bg-muted transition"
-              >
-                <div className="font-medium">User</div>
-                <div className="text-muted-foreground">user@credit.com</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => fill("admin@credit.com", "admin123")}
-                className="rounded-lg border border-border p-3 text-left hover:bg-muted transition"
-              >
-                <div className="font-medium">Admin</div>
-                <div className="text-muted-foreground">admin@credit.com</div>
-              </button>
-            </div>
-          </div>
         </div>
 
         <div className="text-center text-xs text-muted-foreground mt-6 flex flex-col gap-2">
