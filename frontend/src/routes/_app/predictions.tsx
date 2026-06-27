@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { RiskBadge, StatusBadge } from "@/components/app/RiskBadge";
+import { apiFetch } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/predictions")({
   component: PredictionsPage,
@@ -32,11 +33,7 @@ function PredictionsPage() {
       setError(null);
 
       try {
-        const token = localStorage.getItem("creditiq:token");
-
-        const res = await fetch("http://localhost:5086/api/predictions/my", {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const res = await apiFetch("/predictions/my");
 
         if (!res.ok) {
           throw new Error("Failed to fetch predictions");
@@ -50,11 +47,11 @@ function PredictionsPage() {
           amount: p.loanAmount ?? p.amount ?? 0,
           score: p.riskScore ?? p.score ?? 0,
           level: p.riskLevel ?? p.level ?? "Low",
-          date: p.createdAt ?? p.date ?? "",
+          date: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : p.date ?? "",
           explanation: p.explanationMessage ?? p.explanation ?? "No explanation available.",
-          status: p.status ?? "Pending",
-          model: p.model ?? "Rule-Based Engine",
-          client: p.client ?? p.fullName ?? "Current User",
+          status: p.status ?? statusFromRisk(p.riskLevel ?? p.level ?? "Medium"),
+          model: p.model ?? "Random Forest",
+          client: p.client ?? p.user?.fullName ?? p.fullName ?? "Current User",
         }));
 
         setPredictions(mapped);
@@ -181,6 +178,12 @@ function PredictionsPage() {
       )}
     </>
   );
+}
+
+function statusFromRisk(level: string) {
+  if (level === "Low") return "Approved";
+  if (level === "High") return "Rejected";
+  return "Pending";
 }
 
 function ClickableTable({ predictions }: { predictions: Prediction[] }) {

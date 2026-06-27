@@ -33,6 +33,7 @@ namespace CreditDefault.Api.Controllers
         }
 
         [HttpPost("predict")]
+        [Authorize]
         public async Task<IActionResult> Predict(CreditRiskPredictionRequestDto dto)
         {
             if (!ModelState.IsValid)
@@ -40,7 +41,31 @@ namespace CreditDefault.Api.Controllers
                 return ValidationProblem(ModelState);
             }
 
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+            if (userId == null) return Unauthorized();
+            var user = await _userRepo.GetByIdAsync(Guid.Parse(userId));
+            if (user == null) return Unauthorized();
+
             var result = await _pythonPredictionService.PredictAsync(dto);
+            var prediction = new Prediction
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Age = dto.Age,
+                Income = dto.AnnualIncome,
+                EmploymentStatus = dto.EmploymentStatus,
+                CreditScore = dto.CreditScore,
+                ExistingDebt = dto.AnnualIncome * dto.DebtToIncomeRatio,
+                LoanAmount = dto.LoanAmount,
+                LoanTerm = dto.LoanTerm,
+                PaymentHistory = $"Previous defaults: {dto.PreviousDefaults}; Education: {dto.Education}; Marital status: {dto.MaritalStatus}",
+                RiskScore = result.RiskScore,
+                RiskLevel = result.RiskLevel,
+                ExplanationMessage = result.Explanation,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _predictionRepo.AddAsync(prediction);
+
             return Ok(result);
         }
 

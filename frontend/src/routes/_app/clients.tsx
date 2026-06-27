@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Sparkles, AlertTriangle, Info } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { RiskBadge } from "@/components/app/RiskBadge";
-import { API_BASE_URL } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/clients")({
   component: ClientAnalysisPage,
@@ -42,6 +42,8 @@ type PredictionResult = {
   explanation: string;
 };
 
+type ValidationErrors = Partial<Record<keyof FormState, string>>;
+
 const initialForm: FormState = {
   age: "",
   annualIncome: "",
@@ -60,21 +62,27 @@ function ClientAnalysisPage() {
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
   async function analyze(e: React.FormEvent) {
     e.preventDefault();
+    const errors = validateForm(form);
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setResult(null);
+      setError("Please fix the highlighted applicant fields.");
+      return;
+    }
+
+    setValidationErrors({});
     setLoading(true);
     setResult(null);
     setError(null);
 
     try {
-      const token = localStorage.getItem("creditiq:token");
-      const res = await fetch(`${API_BASE_URL}/predictions/predict`, {
+      const res = await apiFetch("/predictions/predict", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify({
           age: Number(form.age),
           annualIncome: Number(form.annualIncome),
@@ -91,7 +99,10 @@ function ClientAnalysisPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.title || data?.error || "Prediction request failed.");
+        const validationMessage = data?.errors
+          ? Object.values(data.errors).flat().join(" ")
+          : null;
+        throw new Error(validationMessage || data?.title || data?.error || "Prediction request failed.");
       }
 
       setResult(await res.json());
@@ -104,6 +115,7 @@ function ClientAnalysisPage() {
 
   function updateField(name: keyof FormState, value: string) {
     setForm((current) => ({ ...current, [name]: value }));
+    setValidationErrors((current) => ({ ...current, [name]: undefined }));
   }
 
   function resetForm() {
@@ -160,12 +172,15 @@ function ClientAnalysisPage() {
                       placeholder={f.placeholder}
                       value={form[fieldName]}
                       required
-                      min={f.name === "creditScore" ? 300 : f.name === "debtToIncomeRatio" || f.name === "previousDefaults" ? 0 : 1}
+                      min={f.name === "creditScore" ? 300 : f.name === "debtToIncomeRatio" || f.name === "previousDefaults" || f.name === "annualIncome" ? 0 : 1}
                       max={f.name === "creditScore" ? 850 : f.name === "debtToIncomeRatio" ? 1 : undefined}
                       step={f.name === "debtToIncomeRatio" ? "0.01" : "1"}
                       onChange={(e) => updateField(fieldName, e.target.value)}
                       className="mt-1.5 w-full h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
                     />
+                  )}
+                  {validationErrors[fieldName] && (
+                    <div className="mt-1 text-xs text-destructive">{validationErrors[fieldName]}</div>
                   )}
                 </div>
               );
@@ -236,4 +251,25 @@ function ClientAnalysisPage() {
       </div>
     </>
   );
+}
+
+function validateForm(form: FormState) {
+  const errors: ValidationErrors = {};
+  const age = Number(form.age);
+  const income = Number(form.annualIncome);
+  const loanAmount = Number(form.loanAmount);
+  const creditScore = Number(form.creditScore);
+  const loanTerm = Number(form.loanTerm);
+  const previousDefaults = Number(form.previousDefaults);
+  const debtToIncomeRatio = Number(form.debtToIncomeRatio);
+
+  if (!Number.isFinite(age) || age <= 0) errors.age = "Age must be greater than 0.";
+  if (!Number.isFinite(income) || income < 0) errors.annualIncome = "Annual income cannot be negative.";
+  if (!Number.isFinite(loanAmount) || loanAmount <= 0) errors.loanAmount = "Loan amount must be greater than 0.";
+  if (!Number.isFinite(creditScore) || creditScore < 300 || creditScore > 850) errors.creditScore = "Credit score must be between 300 and 850.";
+  if (!Number.isFinite(loanTerm) || loanTerm <= 0) errors.loanTerm = "Loan term must be greater than 0.";
+  if (!Number.isFinite(previousDefaults) || previousDefaults < 0) errors.previousDefaults = "Previous defaults cannot be negative.";
+  if (!Number.isFinite(debtToIncomeRatio) || debtToIncomeRatio < 0 || debtToIncomeRatio > 1) errors.debtToIncomeRatio = "Debt-to-income ratio must be between 0 and 1.";
+
+  return errors;
 }

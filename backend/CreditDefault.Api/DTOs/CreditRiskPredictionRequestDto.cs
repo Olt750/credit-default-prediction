@@ -7,7 +7,7 @@ namespace CreditDefault.Api.DTOs
         [Range(1, int.MaxValue, ErrorMessage = "Age must be greater than 0.")]
         public int Age { get; set; }
 
-        [Range(typeof(decimal), "0.01", "79228162514264337593543950335", ErrorMessage = "Annual income must be greater than 0.")]
+        [Range(typeof(decimal), "0", "79228162514264337593543950335", ErrorMessage = "Annual income cannot be negative.")]
         public decimal AnnualIncome { get; set; }
 
         [Range(typeof(decimal), "0.01", "79228162514264337593543950335", ErrorMessage = "Loan amount must be greater than 0.")]
