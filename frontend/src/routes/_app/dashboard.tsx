@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Users, AlertTriangle, CheckCircle2, Activity } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -18,17 +19,11 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { StatCard } from "@/components/app/StatCard";
 import { ChartCard } from "@/components/app/ChartCard";
 import { PredictionTable } from "@/components/app/PredictionTable";
-import { stats, riskDistribution, monthlyActivity } from "@/data/mockData";
+import { apiFetch } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
 });
-
-const loanStatus = [
-  { status: "Approved", count: 8961 },
-  { status: "Pending", count: 1677 },
-  { status: "Rejected", count: 1842 },
-];
 
 const tooltipStyle = {
   background: "var(--popover)",
@@ -38,21 +33,75 @@ const tooltipStyle = {
   color: "var(--foreground)",
 };
 
+type DashboardSummary = {
+  totalClients: number;
+  highRiskClients: number;
+  approvedLoans: number;
+  avgDefaultRisk: number;
+};
+
+type RiskDistribution = {
+  name: string;
+  value: number;
+  color: string;
+};
+
+type MonthlyActivity = {
+  month: string;
+  predictions: number;
+  approved: number;
+};
+
+type LoanStatus = {
+  status: string;
+  count: number;
+};
+
+const emptyStats: DashboardSummary = {
+  totalClients: 0,
+  highRiskClients: 0,
+  approvedLoans: 0,
+  avgDefaultRisk: 0,
+};
+
 function DashboardPage() {
-  const safeStats = stats ?? {
-    totalClients: 0,
-    highRiskClients: 0,
-    approvedLoans: 0,
-    avgDefaultRisk: 0,
-  };
+  const [stats, setStats] = useState<DashboardSummary>(emptyStats);
+  const [riskDistribution, setRiskDistribution] = useState<RiskDistribution[]>([]);
+  const [monthlyActivity, setMonthlyActivity] = useState<MonthlyActivity[]>([]);
+  const [loanStatus, setLoanStatus] = useState<LoanStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const safeRiskDistribution = Array.isArray(riskDistribution)
-    ? riskDistribution
-    : [];
+  useEffect(() => {
+    async function loadDashboard() {
+      setLoading(true);
+      setError(null);
 
-  const safeMonthlyActivity = Array.isArray(monthlyActivity)
-    ? monthlyActivity
-    : [];
+      try {
+        const [summaryRes, riskRes, monthlyRes, loanStatusRes] = await Promise.all([
+          apiFetch("/dashboard/summary"),
+          apiFetch("/dashboard/risk-distribution"),
+          apiFetch("/dashboard/monthly-activity"),
+          apiFetch("/dashboard/loan-status"),
+        ]);
+
+        if (!summaryRes.ok || !riskRes.ok || !monthlyRes.ok || !loanStatusRes.ok) {
+          throw new Error("Failed to load dashboard data.");
+        }
+
+        setStats(await summaryRes.json());
+        setRiskDistribution(await riskRes.json());
+        setMonthlyActivity(await monthlyRes.json());
+        setLoanStatus(await loanStatusRes.json());
+      } catch (err: any) {
+        setError(err.message || "Failed to load dashboard data.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDashboard();
+  }, []);
 
   return (
     <>
@@ -60,23 +109,29 @@ function DashboardPage() {
         title="Risk Dashboard"
         subtitle="Portfolio-wide credit risk overview, updated with the latest model run."
         actions={
-          <button className="h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition">
+          <Link to="/clients" className="h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition inline-flex items-center">
             New analysis
-          </button>
+          </Link>
         }
       />
+
+      {error && (
+        <div className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Clients"
-          value={safeStats.totalClients?.toLocaleString?.() ?? "0"}
+          value={loading ? "..." : stats.totalClients.toLocaleString()}
           icon={Users}
           delta="3.2%"
           tint="primary"
         />
         <StatCard
           label="High Risk Clients"
-          value={safeStats.highRiskClients?.toLocaleString?.() ?? "0"}
+          value={loading ? "..." : stats.highRiskClients.toLocaleString()}
           icon={AlertTriangle}
           delta="1.4%"
           trend="down"
@@ -84,14 +139,14 @@ function DashboardPage() {
         />
         <StatCard
           label="Approved Loans"
-          value={safeStats.approvedLoans?.toLocaleString?.() ?? "0"}
+          value={loading ? "..." : stats.approvedLoans.toLocaleString()}
           icon={CheckCircle2}
           delta="5.1%"
           tint="success"
         />
         <StatCard
           label="Avg. Default Risk"
-          value={`${safeStats.avgDefaultRisk ?? 0}%`}
+          value={loading ? "..." : `${stats.avgDefaultRisk ?? 0}%`}
           icon={Activity}
           delta="0.6%"
           trend="down"
@@ -101,18 +156,18 @@ function DashboardPage() {
 
       <div className="grid lg:grid-cols-3 gap-4 mt-4">
         <ChartCard title="Risk distribution" subtitle="Across active portfolio">
-          {safeRiskDistribution.length > 0 ? (
+          {riskDistribution.some((item) => item.value > 0) ? (
             <>
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
                   <Pie
-                    data={safeRiskDistribution}
+                    data={riskDistribution}
                     dataKey="value"
                     innerRadius={55}
                     outerRadius={85}
                     paddingAngle={3}
                   >
-                    {safeRiskDistribution.map((entry, index) => (
+                    {riskDistribution.map((entry, index) => (
                       <Cell key={index} fill={entry.color} stroke="none" />
                     ))}
                   </Pie>
@@ -121,7 +176,7 @@ function DashboardPage() {
               </ResponsiveContainer>
 
               <div className="flex justify-center gap-4 text-xs">
-                {safeRiskDistribution.map((item) => (
+                {riskDistribution.map((item) => (
                   <div key={item.name} className="flex items-center gap-1.5">
                     <span
                       className="size-2 rounded-full"
@@ -144,9 +199,9 @@ function DashboardPage() {
           subtitle="Predictions vs approvals"
           className="lg:col-span-2"
         >
-          {safeMonthlyActivity.length > 0 ? (
+          {monthlyActivity.some((item) => item.predictions > 0 || item.approved > 0) ? (
             <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={safeMonthlyActivity}>
+              <AreaChart data={monthlyActivity}>
                 <defs>
                   <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
                     <stop
@@ -208,23 +263,29 @@ function DashboardPage() {
 
       <div className="grid lg:grid-cols-3 gap-4 mt-4">
         <ChartCard title="Loan status summary">
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={loanStatus}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis
-                dataKey="status"
-                stroke="var(--muted-foreground)"
-                fontSize={11}
-              />
-              <YAxis stroke="var(--muted-foreground)" fontSize={11} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Bar
-                dataKey="count"
-                radius={[8, 8, 0, 0]}
-                fill="var(--primary)"
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          {loanStatus.some((item) => item.count > 0) ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={loanStatus}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis
+                  dataKey="status"
+                  stroke="var(--muted-foreground)"
+                  fontSize={11}
+                />
+                <YAxis stroke="var(--muted-foreground)" fontSize={11} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar
+                  dataKey="count"
+                  radius={[8, 8, 0, 0]}
+                  fill="var(--primary)"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="p-4 text-center text-muted-foreground">
+              No loan status data.
+            </div>
+          )}
         </ChartCard>
 
         <ChartCard

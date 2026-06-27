@@ -1,10 +1,67 @@
-import { recentPredictions } from "@/data/mockData";
+import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api";
 import { RiskBadge, StatusBadge } from "./RiskBadge";
 
+type PredictionRow = {
+  id: string;
+  client: string;
+  amount: number;
+  score: number;
+  level: "Low" | "Medium" | "High";
+  model: string;
+  date: string;
+  status: "Approved" | "Pending" | "Rejected";
+};
+
 export function PredictionTable({ limit, withAction = false }: { limit?: number; withAction?: boolean }) {
-  const rows = Array.isArray(recentPredictions) && recentPredictions.length > 0
-    ? (limit ? recentPredictions.slice(0, limit) : recentPredictions)
-    : [];
+  const [rows, setRows] = useState<PredictionRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadPredictions() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const query = limit ? `?limit=${limit}` : "";
+        const res = await apiFetch(`/dashboard/recent-predictions${query}`);
+
+        if (!res.ok) {
+          throw new Error("Failed to load recent predictions.");
+        }
+
+        const data = await res.json();
+        const mapped = (Array.isArray(data) ? data : []).map((item: any) => ({
+          id: String(item.id),
+          client: item.client ?? "Current User",
+          amount: Number(item.amount ?? 0),
+          score: Number(item.score ?? 0),
+          level: item.level ?? "Low",
+          model: item.model ?? "Random Forest",
+          date: item.date ? new Date(item.date).toLocaleDateString() : "",
+          status: item.status ?? "Pending",
+        }));
+
+        setRows(mapped);
+      } catch (err: any) {
+        setError(err.message || "Failed to load recent predictions.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPredictions();
+  }, [limit]);
+
+  if (loading) {
+    return <div className="p-4 text-center text-muted-foreground">Loading predictions...</div>;
+  }
+
+  if (error) {
+    return <div className="p-4 text-center text-destructive">{error}</div>;
+  }
+
   if (!rows.length) {
     return <div className="p-4 text-center text-muted-foreground">No predictions available.</div>;
   }
