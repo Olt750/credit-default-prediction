@@ -7,7 +7,13 @@ import {
   ReactNode,
 } from "react";
 
-import { API_BASE_URL } from "./api";
+import {
+  API_BASE_URL,
+  TOKEN_KEY,
+  USER_STORAGE_KEY,
+  apiFetch,
+  clearAuthStorage,
+} from "./api";
 
 export type Role = "Admin" | "User";
 
@@ -36,9 +42,6 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const STORAGE_KEY = "creditiq:user";
-const TOKEN_KEY = "creditiq:token";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [ready, setReady] = useState(false);
@@ -46,17 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const tryLoad = async () => {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
         const token = localStorage.getItem(TOKEN_KEY);
 
-        if (raw && token) {
-          setUser(JSON.parse(raw));
-        } else if (token) {
-          const res = await fetch(`${API_BASE_URL}/auth/me`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+        if (token) {
+          const res = await apiFetch("/auth/me");
 
           if (res.ok) {
             const data = await res.json();
@@ -68,15 +64,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
 
             setUser(safeUser);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser));
+            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(safeUser));
           } else {
-            localStorage.removeItem(TOKEN_KEY);
-            localStorage.removeItem(STORAGE_KEY);
+            clearAuthStorage();
             setUser(null);
           }
+        } else {
+          clearAuthStorage();
+          setUser(null);
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
+        clearAuthStorage();
+        setUser(null);
       } finally {
         setReady(true);
       }
@@ -123,10 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: data.user?.role ?? "User",
           };
 
-          localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(safeUser)
-          );
+          localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(safeUser));
 
           setUser(safeUser);
 
@@ -175,8 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
 
       logout: () => {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(TOKEN_KEY);
+        clearAuthStorage();
         setUser(null);
       },
     }),
