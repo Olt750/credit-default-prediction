@@ -1,39 +1,38 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sparkles, AlertTriangle, Info } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { RiskBadge } from "@/components/app/RiskBadge";
 import { apiFetch } from "@/lib/api";
+import {
+  calculateFinancials,
+  initialFinancialProfileForm,
+  toFinancialProfilePayload,
+  validateFinancialProfile,
+  type FinancialProfileErrors,
+  type FinancialProfileForm,
+} from "@/lib/financialProfile";
 
 export const Route = createFileRoute("/_app/clients")({
   component: ClientAnalysisPage,
 });
 
-const fields = [
-  { name: "age", label: "Age", type: "number", placeholder: "34" },
-  { name: "annualIncome", label: "Annual income (EUR)", type: "number", placeholder: "32000" },
-  { name: "loanAmount", label: "Loan amount (EUR)", type: "number", placeholder: "12000" },
-  { name: "creditScore", label: "Credit score", type: "number", placeholder: "640" },
-  { name: "employmentStatus", label: "Employment status", type: "select", options: ["Employed", "Self-employed", "Unemployed", "Student", "Retired"] },
-  { name: "loanTerm", label: "Loan term (months)", type: "number", placeholder: "36" },
-  { name: "previousDefaults", label: "Previous defaults", type: "number", placeholder: "0" },
-  { name: "debtToIncomeRatio", label: "Debt-to-income ratio", type: "number", placeholder: "0.32" },
-  { name: "education", label: "Education", type: "select", options: ["High school", "Bachelor", "Master", "PhD"] },
-  { name: "maritalStatus", label: "Marital status", type: "select", options: ["Single", "Married", "Divorced", "Widowed"] },
-];
+const personalFields = [
+  { name: "age", label: "Age", placeholder: "34" },
+  { name: "annualIncome", label: "Annual income (EUR)", placeholder: "36000" },
+  { name: "loanAmount", label: "Loan amount (EUR)", placeholder: "12000" },
+  { name: "creditScore", label: "Credit score", placeholder: "640" },
+  { name: "loanTermMonths", label: "Loan term (months)", placeholder: "36" },
+  { name: "previousDefaults", label: "Previous defaults", placeholder: "0" },
+] as const;
 
-type FormState = {
-  age: string;
-  annualIncome: string;
-  loanAmount: string;
-  creditScore: string;
-  employmentStatus: string;
-  loanTerm: string;
-  previousDefaults: string;
-  debtToIncomeRatio: string;
-  education: string;
-  maritalStatus: string;
-};
+const debtFields = [
+  { name: "monthlyCarLoanPayment", label: "Monthly car loan payment (EUR)" },
+  { name: "monthlyMortgageOrRentPayment", label: "Monthly mortgage/rent payment (EUR)" },
+  { name: "monthlyPersonalLoanPayment", label: "Monthly personal loan payment (EUR)" },
+  { name: "monthlyCreditCardPayment", label: "Monthly credit card payment (EUR)" },
+  { name: "monthlyOtherDebtPayment", label: "Monthly other debt payment (EUR)" },
+] as const;
 
 type PredictionResult = {
   riskLevel: "Low" | "Medium" | "High";
@@ -42,31 +41,54 @@ type PredictionResult = {
   explanation: string;
 };
 
-type ValidationErrors = Partial<Record<keyof FormState, string>>;
-
-const initialForm: FormState = {
-  age: "",
-  annualIncome: "",
-  loanAmount: "",
-  creditScore: "",
-  employmentStatus: "Employed",
-  loanTerm: "",
-  previousDefaults: "0",
-  debtToIncomeRatio: "",
-  education: "High school",
-  maritalStatus: "Single",
-};
-
 function ClientAnalysisPage() {
-  const [form, setForm] = useState<FormState>(initialForm);
+  const [form, setForm] = useState<FinancialProfileForm>(initialFinancialProfileForm);
+  const [validationErrors, setValidationErrors] = useState<FinancialProfileErrors>({});
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const financials = useMemo(() => calculateFinancials(form), [form]);
+
+  useEffect(() => {
+    async function loadProfile() {
+      setProfileLoading(true);
+
+      try {
+        const res = await apiFetch("/client-profile/me");
+        if (res.status === 404) return;
+        if (!res.ok) throw new Error("Failed to load saved applicant profile.");
+
+        const data = await res.json();
+        setForm({
+          age: String(data.age ?? ""),
+          annualIncome: String(data.annualIncome ?? ""),
+          loanAmount: String(data.loanAmount ?? ""),
+          creditScore: String(data.creditScore ?? ""),
+          employmentStatus: data.employmentStatus ?? "Employed",
+          loanTermMonths: String(data.loanTermMonths ?? ""),
+          previousDefaults: String(data.previousDefaults ?? "0"),
+          education: data.education ?? "High school",
+          maritalStatus: data.maritalStatus ?? "Single",
+          monthlyCarLoanPayment: String(data.monthlyCarLoanPayment ?? "0"),
+          monthlyMortgageOrRentPayment: String(data.monthlyMortgageOrRentPayment ?? "0"),
+          monthlyPersonalLoanPayment: String(data.monthlyPersonalLoanPayment ?? "0"),
+          monthlyCreditCardPayment: String(data.monthlyCreditCardPayment ?? "0"),
+          monthlyOtherDebtPayment: String(data.monthlyOtherDebtPayment ?? "0"),
+        });
+      } catch (err: any) {
+        setError(err.message || "Failed to load saved applicant profile.");
+      } finally {
+        setProfileLoading(false);
+      }
+    }
+
+    loadProfile();
+  }, []);
 
   async function analyze(e: React.FormEvent) {
     e.preventDefault();
-    const errors = validateForm(form);
+    const errors = validateFinancialProfile(form);
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
@@ -81,20 +103,12 @@ function ClientAnalysisPage() {
     setError(null);
 
     try {
+      const payload = toFinancialProfilePayload(form);
+      await saveProfile(payload);
+
       const res = await apiFetch("/predictions/predict", {
         method: "POST",
-        body: JSON.stringify({
-          age: Number(form.age),
-          annualIncome: Number(form.annualIncome),
-          loanAmount: Number(form.loanAmount),
-          creditScore: Number(form.creditScore),
-          employmentStatus: form.employmentStatus,
-          loanTerm: Number(form.loanTerm),
-          previousDefaults: Number(form.previousDefaults),
-          debtToIncomeRatio: Number(form.debtToIncomeRatio),
-          education: form.education,
-          maritalStatus: form.maritalStatus,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -113,15 +127,16 @@ function ClientAnalysisPage() {
     }
   }
 
-  function updateField(name: keyof FormState, value: string) {
+  function updateField(name: keyof FinancialProfileForm, value: string) {
     setForm((current) => ({ ...current, [name]: value }));
     setValidationErrors((current) => ({ ...current, [name]: undefined }));
   }
 
   function resetForm() {
-    setForm(initialForm);
+    setForm(initialFinancialProfileForm);
     setResult(null);
     setError(null);
+    setValidationErrors({});
   }
 
   const scoreColor =
@@ -151,49 +166,70 @@ function ClientAnalysisPage() {
             <Sparkles className="size-4 text-primary" />
             <h3 className="font-semibold">Applicant profile</h3>
           </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {fields.map((f) => {
-              const fieldName = f.name as keyof FormState;
 
-              return (
-                <div key={f.name}>
-                  <label className="text-xs text-muted-foreground">{f.label}</label>
-                  {f.type === "select" ? (
-                    <select
-                      value={form[fieldName]}
-                      onChange={(e) => updateField(fieldName, e.target.value)}
-                      className="mt-1.5 w-full h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring/40"
-                    >
-                      {f.options!.map((o) => <option key={o}>{o}</option>)}
-                    </select>
-                  ) : (
-                    <input
-                      type={f.type}
-                      placeholder={f.placeholder}
-                      value={form[fieldName]}
-                      required
-                      min={f.name === "creditScore" ? 300 : f.name === "debtToIncomeRatio" || f.name === "previousDefaults" || f.name === "annualIncome" ? 0 : 1}
-                      max={f.name === "creditScore" ? 850 : f.name === "debtToIncomeRatio" ? 1 : undefined}
-                      step={f.name === "debtToIncomeRatio" ? "0.01" : "1"}
-                      onChange={(e) => updateField(fieldName, e.target.value)}
-                      className="mt-1.5 w-full h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
-                    />
-                  )}
-                  {validationErrors[fieldName] && (
-                    <div className="mt-1 text-xs text-destructive">{validationErrors[fieldName]}</div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-6 flex gap-3">
-            <button type="submit" disabled={loading} className="h-11 px-5 rounded-xl gradient-hero text-sm font-medium text-white shadow-[var(--shadow-glow)] disabled:opacity-60">
-              {loading ? "Analyzing..." : "Analyze Risk"}
-            </button>
-            <button type="reset" className="h-11 px-5 rounded-xl border border-border text-sm hover:bg-muted/40">
-              Reset
-            </button>
-          </div>
+          {profileLoading ? (
+            <div className="py-16 text-center text-sm text-muted-foreground">Loading applicant profile...</div>
+          ) : (
+            <>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {personalFields.map((field) => (
+                  <NumberField
+                    key={field.name}
+                    name={field.name}
+                    label={field.label}
+                    value={form[field.name]}
+                    placeholder={field.placeholder}
+                    error={validationErrors[field.name]}
+                    onChange={updateField}
+                  />
+                ))}
+                <SelectField
+                  label="Employment status"
+                  value={form.employmentStatus}
+                  onChange={(value) => updateField("employmentStatus", value)}
+                  options={["Employed", "Self-employed", "Unemployed", "Student", "Retired"]}
+                />
+                <SelectField
+                  label="Education"
+                  value={form.education}
+                  onChange={(value) => updateField("education", value)}
+                  options={["High school", "Bachelor", "Master", "PhD"]}
+                />
+                <SelectField
+                  label="Marital status"
+                  value={form.maritalStatus}
+                  onChange={(value) => updateField("maritalStatus", value)}
+                  options={["Single", "Married", "Divorced", "Widowed"]}
+                />
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4 mt-4">
+                {debtFields.map((field) => (
+                  <NumberField
+                    key={field.name}
+                    name={field.name}
+                    label={field.label}
+                    value={form[field.name]}
+                    placeholder="0"
+                    error={validationErrors[field.name]}
+                    onChange={updateField}
+                  />
+                ))}
+              </div>
+
+              <DebtSummary financials={financials} />
+
+              <div className="mt-6 flex gap-3">
+                <button type="submit" disabled={loading} className="h-11 px-5 rounded-xl gradient-hero text-sm font-medium text-white shadow-[var(--shadow-glow)] disabled:opacity-60">
+                  {loading ? "Analyzing..." : "Analyze Risk"}
+                </button>
+                <button type="reset" className="h-11 px-5 rounded-xl border border-border text-sm hover:bg-muted/40">
+                  Reset
+                </button>
+              </div>
+            </>
+          )}
+
           {error && (
             <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
@@ -238,8 +274,8 @@ function ClientAnalysisPage() {
                   <dd className="font-medium">{result.prediction === 0 ? "Default risk flagged" : "Good credit predicted"}</dd>
                 </div>
                 <div className="flex justify-between border-b border-border/50 pb-2">
-                  <dt className="text-muted-foreground">Model Used</dt>
-                  <dd className="font-medium">Random Forest</dd>
+                  <dt className="text-muted-foreground">Debt-to-income ratio</dt>
+                  <dd className="font-medium">{(financials.debtToIncomeRatio * 100).toFixed(2)}%</dd>
                 </div>
               </dl>
               <div className="mt-5 rounded-xl bg-muted/40 p-4 text-xs text-muted-foreground leading-relaxed">
@@ -253,23 +289,65 @@ function ClientAnalysisPage() {
   );
 }
 
-function validateForm(form: FormState) {
-  const errors: ValidationErrors = {};
-  const age = Number(form.age);
-  const income = Number(form.annualIncome);
-  const loanAmount = Number(form.loanAmount);
-  const creditScore = Number(form.creditScore);
-  const loanTerm = Number(form.loanTerm);
-  const previousDefaults = Number(form.previousDefaults);
-  const debtToIncomeRatio = Number(form.debtToIncomeRatio);
+async function saveProfile(payload: ReturnType<typeof toFinancialProfilePayload>) {
+  const existing = await apiFetch("/client-profile/me");
+  const res = await apiFetch(existing.status === 404 ? "/client-profile" : "/client-profile/me", {
+    method: existing.status === 404 ? "POST" : "PUT",
+    body: JSON.stringify(payload),
+  });
 
-  if (!Number.isFinite(age) || age <= 0) errors.age = "Age must be greater than 0.";
-  if (!Number.isFinite(income) || income < 0) errors.annualIncome = "Annual income cannot be negative.";
-  if (!Number.isFinite(loanAmount) || loanAmount <= 0) errors.loanAmount = "Loan amount must be greater than 0.";
-  if (!Number.isFinite(creditScore) || creditScore < 300 || creditScore > 850) errors.creditScore = "Credit score must be between 300 and 850.";
-  if (!Number.isFinite(loanTerm) || loanTerm <= 0) errors.loanTerm = "Loan term must be greater than 0.";
-  if (!Number.isFinite(previousDefaults) || previousDefaults < 0) errors.previousDefaults = "Previous defaults cannot be negative.";
-  if (!Number.isFinite(debtToIncomeRatio) || debtToIncomeRatio < 0 || debtToIncomeRatio > 1) errors.debtToIncomeRatio = "Debt-to-income ratio must be between 0 and 1.";
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.title || data?.error || "Failed to save applicant profile.");
+  }
+}
 
-  return errors;
+function NumberField({ name, label, value, placeholder, error, onChange }: { name: keyof FinancialProfileForm; label: string; value: string; placeholder: string; error?: string; onChange: (name: keyof FinancialProfileForm, value: string) => void }) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground">{label}</label>
+      <input
+        type="number"
+        placeholder={placeholder}
+        value={value}
+        required
+        min={name === "creditScore" ? 300 : 0}
+        max={name === "creditScore" ? 850 : undefined}
+        step="1"
+        onChange={(e) => onChange(name, e.target.value)}
+        className="mt-1.5 w-full h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+      />
+      {error && <div className="mt-1 text-xs text-destructive">{error}</div>}
+    </div>
+  );
+}
+
+function SelectField({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground">{label}</label>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="mt-1.5 w-full h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring/40">
+        {options.map((option) => <option key={option}>{option}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function DebtSummary({ financials }: { financials: ReturnType<typeof calculateFinancials> }) {
+  return (
+    <div className="mt-5 grid sm:grid-cols-3 gap-3 rounded-xl bg-muted/40 p-4 text-sm">
+      <SummaryItem label="Monthly income" value={`EUR ${financials.monthlyIncome.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} />
+      <SummaryItem label="Total monthly debt" value={`EUR ${financials.totalMonthlyDebt.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} />
+      <SummaryItem label="Debt-to-income ratio" value={`${(financials.debtToIncomeRatio * 100).toFixed(2)}%`} />
+    </div>
+  );
+}
+
+function SummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="font-semibold mt-1">{value}</div>
+    </div>
+  );
 }
