@@ -14,9 +14,20 @@ namespace CreditDefault.Api.Models
         public decimal ExistingDebt { get; set; }
         public decimal LoanAmount { get; set; }
         public int LoanTerm { get; set; }
+        public int PreviousDefaults { get; set; }
+        public string Education { get; set; } = string.Empty;
+        public string MaritalStatus { get; set; } = string.Empty;
+        public decimal MonthlyCarLoanPayment { get; set; }
+        public decimal MonthlyMortgageOrRentPayment { get; set; }
+        public decimal MonthlyPersonalLoanPayment { get; set; }
+        public decimal MonthlyCreditCardPayment { get; set; }
+        public decimal MonthlyOtherDebtPayment { get; set; }
+        public decimal TotalMonthlyDebt { get; set; }
+        public decimal DebtToIncomeRatio { get; set; }
         public string PaymentHistory { get; set; }
         public int RiskScore { get; set; }
         public string RiskLevel { get; set; }
+        public string LoanStatus { get; set; } = string.Empty;
         public string ExplanationMessage { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }

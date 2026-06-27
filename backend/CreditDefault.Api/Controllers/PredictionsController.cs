@@ -55,12 +55,23 @@ namespace CreditDefault.Api.Controllers
                 Income = dto.AnnualIncome,
                 EmploymentStatus = dto.EmploymentStatus,
                 CreditScore = dto.CreditScore,
-                ExistingDebt = dto.AnnualIncome * dto.DebtToIncomeRatio,
+                ExistingDebt = dto.TotalMonthlyDebt,
                 LoanAmount = dto.LoanAmount,
                 LoanTerm = dto.LoanTerm,
+                PreviousDefaults = dto.PreviousDefaults,
+                Education = dto.Education,
+                MaritalStatus = dto.MaritalStatus,
+                MonthlyCarLoanPayment = dto.MonthlyCarLoanPayment,
+                MonthlyMortgageOrRentPayment = dto.MonthlyMortgageOrRentPayment,
+                MonthlyPersonalLoanPayment = dto.MonthlyPersonalLoanPayment,
+                MonthlyCreditCardPayment = dto.MonthlyCreditCardPayment,
+                MonthlyOtherDebtPayment = dto.MonthlyOtherDebtPayment,
+                TotalMonthlyDebt = dto.TotalMonthlyDebt,
+                DebtToIncomeRatio = dto.DebtToIncomeRatio,
                 PaymentHistory = $"Previous defaults: {dto.PreviousDefaults}; Education: {dto.Education}; Marital status: {dto.MaritalStatus}",
                 RiskScore = result.RiskScore,
                 RiskLevel = result.RiskLevel,
+                LoanStatus = result.RiskLevel == "Low" ? "Approved" : result.RiskLevel == "Medium" ? "Pending" : "Rejected",
                 ExplanationMessage = result.Explanation,
                 CreatedAt = DateTime.UtcNow
             };
@@ -114,6 +125,17 @@ namespace CreditDefault.Api.Controllers
             if (userId == null) return Unauthorized();
             var predictions = await _predictionRepo.GetByUserIdAsync(Guid.Parse(userId));
             return Ok(predictions);
+        }
+
+        [HttpGet("recent")]
+        [Authorize]
+        public async Task<IActionResult> GetRecentPredictions([FromServices] DashboardService dashboardService, [FromQuery] int limit = 5)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+            if (userId == null) return Unauthorized();
+
+            var isAdmin = User.IsInRole("Admin") || User.FindFirstValue(ClaimTypes.Role) == "Admin";
+            return Ok(await dashboardService.GetRecentPredictionsAsync(Guid.Parse(userId), isAdmin, limit));
         }
 
         [HttpGet("{id}")]
