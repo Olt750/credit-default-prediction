@@ -7,7 +7,12 @@ namespace CreditDefault.Api.DTOs
         public int TotalClients { get; set; }
         public int HighRiskClients { get; set; }
         public int ApprovedLoans { get; set; }
-        public decimal AvgDefaultRisk { get; set; }
+        public decimal AverageDefaultRisk { get; set; }
+        public decimal AvgDefaultRisk
+        {
+            get => AverageDefaultRisk;
+            set => AverageDefaultRisk = value;
+        }
     }
 
     public class DashboardChartItemDto
@@ -22,6 +27,11 @@ namespace CreditDefault.Api.DTOs
         public string Month { get; set; } = string.Empty;
         public int Predictions { get; set; }
         public int Approved { get; set; }
+        public int Approvals
+        {
+            get => Approved;
+            set => Approved = value;
+        }
     }
 
     public class DashboardLoanStatusDto
@@ -41,5 +51,14 @@ namespace CreditDefault.Api.DTOs
         public DateTime Date { get; set; }
         public string Status { get; set; } = string.Empty;
         public string Explanation { get; set; } = string.Empty;
+    }
+
+    public class DashboardDto
+    {
+        public DashboardSummaryDto Summary { get; set; } = new();
+        public IReadOnlyList<DashboardChartItemDto> RiskDistribution { get; set; } = Array.Empty<DashboardChartItemDto>();
+        public IReadOnlyList<DashboardMonthlyActivityDto> MonthlyActivity { get; set; } = Array.Empty<DashboardMonthlyActivityDto>();
+        public IReadOnlyList<DashboardLoanStatusDto> LoanStatusSummary { get; set; } = Array.Empty<DashboardLoanStatusDto>();
+        public IReadOnlyList<DashboardPredictionDto> RecentPredictions { get; set; } = Array.Empty<DashboardPredictionDto>();
     }
 }

@@ -37,7 +37,8 @@ type DashboardSummary = {
   totalClients: number;
   highRiskClients: number;
   approvedLoans: number;
-  avgDefaultRisk: number;
+  averageDefaultRisk: number;
+  avgDefaultRisk?: number;
 };
 
 type RiskDistribution = {
@@ -61,7 +62,7 @@ const emptyStats: DashboardSummary = {
   totalClients: 0,
   highRiskClients: 0,
   approvedLoans: 0,
-  avgDefaultRisk: 0,
+  averageDefaultRisk: 0,
 };
 
 function DashboardPage() {
@@ -78,21 +79,17 @@ function DashboardPage() {
       setError(null);
 
       try {
-        const [summaryRes, riskRes, monthlyRes, loanStatusRes] = await Promise.all([
-          apiFetch("/dashboard/summary"),
-          apiFetch("/dashboard/risk-distribution"),
-          apiFetch("/dashboard/monthly-activity"),
-          apiFetch("/dashboard/loan-status"),
-        ]);
+        const res = await apiFetch("/dashboard");
 
-        if (!summaryRes.ok || !riskRes.ok || !monthlyRes.ok || !loanStatusRes.ok) {
+        if (!res.ok) {
           throw new Error("Failed to load dashboard data.");
         }
 
-        setStats(await summaryRes.json());
-        setRiskDistribution(await riskRes.json());
-        setMonthlyActivity(await monthlyRes.json());
-        setLoanStatus(await loanStatusRes.json());
+        const data = await res.json();
+        setStats(data.summary ?? emptyStats);
+        setRiskDistribution(data.riskDistribution ?? []);
+        setMonthlyActivity(data.monthlyActivity ?? []);
+        setLoanStatus(data.loanStatusSummary ?? []);
       } catch (err: any) {
         setError(err.message || "Failed to load dashboard data.");
       } finally {
@@ -146,7 +143,7 @@ function DashboardPage() {
         />
         <StatCard
           label="Avg. Default Risk"
-          value={loading ? "..." : `${stats.avgDefaultRisk ?? 0}%`}
+          value={loading ? "..." : `${stats.averageDefaultRisk ?? stats.avgDefaultRisk ?? 0}%`}
           icon={Activity}
           delta="0.6%"
           trend="down"

@@ -28,14 +28,28 @@ namespace CreditDefault.Api.Services
 
             return new DashboardSummaryDto
             {
-                TotalClients = isAdmin ? await _context.Users.CountAsync() : 1,
+                TotalClients = isAdmin
+                    ? await _context.ClientProfiles.CountAsync()
+                    : await _context.ClientProfiles.CountAsync(p => p.UserId == userId),
                 HighRiskClients = await predictions
                     .Where(p => p.RiskLevel == "High")
                     .Select(p => p.UserId)
                     .Distinct()
                     .CountAsync(),
                 ApprovedLoans = await predictions.CountAsync(p => p.RiskLevel == "Low"),
-                AvgDefaultRisk = Math.Round((decimal)avgRisk, 1)
+                AverageDefaultRisk = Math.Round((decimal)avgRisk, 1)
+            };
+        }
+
+        public async Task<DashboardDto> GetDashboardAsync(Guid userId, bool isAdmin)
+        {
+            return new DashboardDto
+            {
+                Summary = await GetSummaryAsync(userId, isAdmin),
+                RiskDistribution = await GetRiskDistributionAsync(userId, isAdmin),
+                MonthlyActivity = await GetMonthlyActivityAsync(userId, isAdmin),
+                LoanStatusSummary = await GetLoanStatusAsync(userId, isAdmin),
+                RecentPredictions = await GetRecentPredictionsAsync(userId, isAdmin)
             };
         }
 
@@ -91,9 +105,9 @@ namespace CreditDefault.Api.Services
 
             return new[]
             {
-                new DashboardLoanStatusDto { Status = "Approved", Count = await predictions.CountAsync(p => p.RiskLevel == "Low") },
-                new DashboardLoanStatusDto { Status = "Pending", Count = await predictions.CountAsync(p => p.RiskLevel == "Medium") },
-                new DashboardLoanStatusDto { Status = "Rejected", Count = await predictions.CountAsync(p => p.RiskLevel == "High") }
+                new DashboardLoanStatusDto { Status = "Approved", Count = await predictions.CountAsync(p => p.LoanStatus == "Approved" || p.RiskLevel == "Low") },
+                new DashboardLoanStatusDto { Status = "Pending", Count = await predictions.CountAsync(p => p.LoanStatus == "Pending" || p.RiskLevel == "Medium") },
+                new DashboardLoanStatusDto { Status = "Rejected", Count = await predictions.CountAsync(p => p.LoanStatus == "Rejected" || p.RiskLevel == "High") }
             };
         }
 
@@ -111,7 +125,7 @@ namespace CreditDefault.Api.Services
                     Score = p.RiskScore,
                     Level = p.RiskLevel,
                     Date = p.CreatedAt,
-                    Status = p.RiskLevel == "Low" ? "Approved" : p.RiskLevel == "Medium" ? "Pending" : "Rejected",
+                    Status = p.LoanStatus == "" ? p.RiskLevel == "Low" ? "Approved" : p.RiskLevel == "Medium" ? "Pending" : "Rejected" : p.LoanStatus,
                     Explanation = p.ExplanationMessage
                 })
                 .ToListAsync();

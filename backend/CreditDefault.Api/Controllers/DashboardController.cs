@@ -20,6 +20,15 @@ namespace CreditDefault.Api.Controllers
             _dashboardService = dashboardService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetDashboard()
+        {
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized();
+
+            return Ok(await _dashboardService.GetDashboardAsync(userId.Value, IsAdmin()));
+        }
+
         [HttpGet("summary")]
         public async Task<IActionResult> GetSummary()
         {
@@ -48,6 +57,7 @@ namespace CreditDefault.Api.Controllers
         }
 
         [HttpGet("loan-status")]
+        [HttpGet("loan-status-summary")]
         public async Task<IActionResult> GetLoanStatus()
         {
             var userId = GetUserId();

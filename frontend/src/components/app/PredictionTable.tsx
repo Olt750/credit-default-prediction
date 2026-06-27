@@ -25,7 +25,7 @@ export function PredictionTable({ limit, withAction = false }: { limit?: number;
 
       try {
         const query = limit ? `?limit=${limit}` : "";
-        const res = await apiFetch(`/dashboard/recent-predictions${query}`);
+        const res = await apiFetch(`/predictions/recent${query}`);
 
         if (!res.ok) {
           throw new Error("Failed to load recent predictions.");
@@ -63,7 +63,7 @@ export function PredictionTable({ limit, withAction = false }: { limit?: number;
   }
 
   if (!rows.length) {
-    return <div className="p-4 text-center text-muted-foreground">No predictions available.</div>;
+    return <div className="p-4 text-center text-muted-foreground">No recent predictions yet.</div>;
   }
   return (
     <div className="overflow-x-auto -mx-5">
