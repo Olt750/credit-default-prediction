@@ -12,10 +12,10 @@ namespace CreditDefault.Api.Models
         public Guid? EntityId { get; set; }
         public string? OldValues { get; set; }
         public string? NewValues { get; set; }
-        public string? IpAddress { get; set; }
+        public string IpAddress { get; set; } = "Unknown";
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public string? PerformedBy { get; set; }
+        public string PerformedBy { get; set; } = "System";
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-        public string? Details { get; set; }
+        public string Details { get; set; } = string.Empty;
     }
 }

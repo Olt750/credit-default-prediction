@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Security.Claims;
 using CreditDefault.Api.Interfaces;
 using CreditDefault.Api.Models;
 
@@ -26,21 +27,50 @@ namespace CreditDefault.Api.Services
             Guid? entityId = Guid.TryParse(idValue, out var parsedId) ? parsedId : null;
             var userIdValue = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             Guid? userId = Guid.TryParse(userIdValue, out var parsedUserId) ? parsedUserId : null;
+            var now = DateTime.UtcNow;
 
             return _repository.AddAsync(new AuditLog
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                Action = context.Request.Method,
-                EntityName = controller ?? "Unknown",
+                Action = string.IsNullOrWhiteSpace(context.Request.Method) ? "UNKNOWN" : context.Request.Method,
+                EntityName = string.IsNullOrWhiteSpace(controller) ? "Unknown" : controller,
                 EntityId = entityId,
                 NewValues = SanitizeJson(requestBody),
-                IpAddress = context.Connection.RemoteIpAddress?.ToString(),
-                CreatedAt = DateTime.UtcNow,
-                Timestamp = DateTime.UtcNow,
-                PerformedBy = userId?.ToString(),
-                Details = $"{context.Request.Method} {context.Request.Path}"
+                IpAddress = context.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
+                CreatedAt = now,
+                Timestamp = now,
+                PerformedBy = ResolvePerformedBy(context, userIdValue),
+                Details = $"{context.Request.Method} {context.Request.Path}".Trim()
             });
+        }
+
+        private static string ResolvePerformedBy(HttpContext context, string? userIdValue)
+        {
+            if (context.User?.Identity?.IsAuthenticated != true)
+            {
+                return "Anonymous";
+            }
+
+            var identityName = context.User.Identity?.Name;
+            if (!string.IsNullOrWhiteSpace(identityName))
+            {
+                return identityName;
+            }
+
+            var email = context.User.FindFirst(ClaimTypes.Email)?.Value
+                ?? context.User.FindFirst("email")?.Value;
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                return email;
+            }
+
+            if (!string.IsNullOrWhiteSpace(userIdValue))
+            {
+                return userIdValue;
+            }
+
+            return "UnknownUser";
         }
 
         private static string? SanitizeJson(string? body)

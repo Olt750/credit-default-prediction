@@ -26,6 +26,12 @@ namespace CreditDefault.Api.Middleware
             catch (Exception ex)
             {
                 _logger.LogError(ex, ex.Message);
+                if (context.Response.HasStarted)
+                {
+                    _logger.LogWarning("The response has already started, cannot write error response.");
+                    throw;
+                }
+
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                 await context.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred." });
             }

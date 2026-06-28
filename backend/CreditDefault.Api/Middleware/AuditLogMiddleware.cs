@@ -10,10 +10,12 @@ namespace CreditDefault.Api.Middleware
         };
 
         private readonly RequestDelegate _next;
+        private readonly ILogger<AuditLogMiddleware> _logger;
 
-        public AuditLogMiddleware(RequestDelegate next)
+        public AuditLogMiddleware(RequestDelegate next, ILogger<AuditLogMiddleware> logger)
         {
             _next = next;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context, AuditLogService auditLogService)
@@ -28,11 +30,24 @@ namespace CreditDefault.Api.Middleware
                 context.Request.Body.Position = 0;
             }
 
-            await _next(context);
-
-            if (MutatingMethods.Contains(context.Request.Method) && !context.Request.Path.StartsWithSegments("/swagger"))
+            var shouldAudit = MutatingMethods.Contains(context.Request.Method) && !context.Request.Path.StartsWithSegments("/swagger");
+            try
             {
-                await auditLogService.LogRequestAsync(context, body);
+                await _next(context);
+            }
+            finally
+            {
+                if (shouldAudit)
+                {
+                    try
+                    {
+                        await auditLogService.LogRequestAsync(context, body);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Audit logging failed for {Method} {Path}. The request will not be failed because of audit logging.", context.Request.Method, context.Request.Path);
+                    }
+                }
             }
         }
     }

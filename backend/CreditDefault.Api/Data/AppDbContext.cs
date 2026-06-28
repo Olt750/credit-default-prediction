@@ -169,6 +169,11 @@ namespace CreditDefault.Api.Data
                 entity.HasIndex(a => a.UserId);
                 entity.HasIndex(a => a.CreatedAt);
                 entity.HasIndex(a => a.EntityName);
+                entity.Property(a => a.Action).IsRequired();
+                entity.Property(a => a.EntityName).IsRequired();
+                entity.Property(a => a.IpAddress).IsRequired().HasDefaultValue("Unknown");
+                entity.Property(a => a.PerformedBy).IsRequired().HasDefaultValue("System");
+                entity.Property(a => a.Details).IsRequired().HasDefaultValue(string.Empty);
             });
 
             modelBuilder.Entity<Notification>(entity =>
