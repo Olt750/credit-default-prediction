@@ -1,8 +1,10 @@
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CreditDefault.Api.Interfaces;
+using CreditDefault.Api.Services;
 
 namespace CreditDefault.Api.Controllers
 {
@@ -14,12 +16,18 @@ namespace CreditDefault.Api.Controllers
         private readonly IUserRepository _userRepo;
         private readonly IPredictionRepository _predictionRepo;
         private readonly IAuditLogRepository _auditLogRepo;
+        private readonly NotificationService _notificationService;
 
-        public AdminController(IUserRepository userRepo, IPredictionRepository predictionRepo, IAuditLogRepository auditLogRepo)
+        public AdminController(
+            IUserRepository userRepo,
+            IPredictionRepository predictionRepo,
+            IAuditLogRepository auditLogRepo,
+            NotificationService notificationService)
         {
             _userRepo = userRepo;
             _predictionRepo = predictionRepo;
             _auditLogRepo = auditLogRepo;
+            _notificationService = notificationService;
         }
 
         [HttpGet("users")]
@@ -45,5 +53,15 @@ namespace CreditDefault.Api.Controllers
 
         [HttpGet("logs")]
         public async Task<IActionResult> GetLogs() => Ok(await _auditLogRepo.GetAllAsync());
+
+        [HttpGet("notifications")]
+        public async Task<IActionResult> GetNotifications([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+        {
+            var userId = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+            return Guid.TryParse(userId, out var parsed)
+                ? Ok(await _notificationService.GetForUserAsync(parsed, page, pageSize))
+                : Unauthorized();
+        }
     }
 }

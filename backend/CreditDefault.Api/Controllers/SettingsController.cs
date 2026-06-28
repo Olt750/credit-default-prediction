@@ -11,7 +11,12 @@ namespace CreditDefault.Api.Controllers
     public class SettingsController : ControllerBase
     {
         private readonly SettingService _service;
-        public SettingsController(SettingService service) => _service = service;
+        private readonly NotificationService _notificationService;
+        public SettingsController(SettingService service, NotificationService notificationService)
+        {
+            _service = service;
+            _notificationService = notificationService;
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
@@ -23,6 +28,7 @@ namespace CreditDefault.Api.Controllers
             setting.CreatedAt = DateTime.UtcNow;
             setting.UpdatedAt = DateTime.UtcNow;
             await _service.CreateAsync(setting);
+            await _notificationService.NotifyAdminAsync("SettingsChanged", "Settings Updated", $"Setting '{setting.Key}' was created.");
             return CreatedAtAction(nameof(GetAll), new { id = setting.Id }, setting);
         }
 
@@ -38,6 +44,7 @@ namespace CreditDefault.Api.Controllers
             setting.IsSensitive = dto.IsSensitive;
             setting.UpdatedAt = DateTime.UtcNow;
             await _service.UpdateAsync(setting);
+            await _notificationService.NotifyAdminAsync("SettingsChanged", "Settings Updated", $"Setting '{setting.Key}' was updated.");
             return Ok(setting);
         }
     }

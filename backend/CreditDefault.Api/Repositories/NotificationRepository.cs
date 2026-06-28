@@ -16,11 +16,25 @@ namespace CreditDefault.Api.Repositories
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
 
+        public async Task<List<Notification>> GetForUserAsync(Guid userId, int page, int pageSize) =>
+            await _context.Notifications
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .Skip((Math.Max(page, 1) - 1) * Math.Clamp(pageSize, 1, 100))
+                .Take(Math.Clamp(pageSize, 1, 100))
+                .ToListAsync();
+
         public async Task<int> GetUnreadCountAsync(Guid userId) =>
             await _context.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
 
         public async Task<Notification?> GetForUserByIdAsync(Guid userId, Guid id) =>
             await _context.Notifications.FirstOrDefaultAsync(n => n.UserId == userId && n.Id == id);
+
+        public async Task AddAsync(Notification notification)
+        {
+            _context.Notifications.Add(notification);
+            await _context.SaveChangesAsync();
+        }
 
         public async Task MarkAllReadAsync(Guid userId)
         {

@@ -2,9 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { Search, Bell, ChevronDown, LogOut } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
+import { useNotifications } from "@/lib/notifications";
 
 export function Navbar() {
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -40,9 +42,17 @@ export function Navbar() {
             className="w-full pl-9 pr-4 h-10 rounded-xl bg-muted/60 border border-transparent text-sm placeholder:text-muted-foreground focus:outline-none focus:bg-background focus:border-border focus:ring-2 focus:ring-ring/30"
           />
         </div>
-        <button className="relative size-10 rounded-xl bg-muted/60 hover:bg-muted transition flex items-center justify-center">
+        <button
+          onClick={() => navigate({ to: "/notifications" })}
+          className="relative size-10 rounded-xl bg-muted/60 hover:bg-muted transition flex items-center justify-center"
+          aria-label="Open notifications"
+        >
           <Bell className="size-4" />
-          <span className="absolute top-2 right-2 size-2 rounded-full bg-destructive" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-destructive text-[10px] leading-5 text-destructive-foreground text-center">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
         </button>
         <div ref={ref} className="relative">
           <button

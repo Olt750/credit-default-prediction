@@ -1,5 +1,6 @@
 using CreditDefault.Api.Configuration;
 using CreditDefault.Api.Data;
+using CreditDefault.Api.Hubs;
 using CreditDefault.Api.Middleware;
 using CreditDefault.Api.Authorization;
 using Microsoft.AspNetCore.Authorization;
@@ -17,6 +18,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAppServices(builder.Configuration);
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
+builder.Services.AddSignalR();
 
 // JWT Auth
 var jwtSecret = builder.Configuration["Jwt:Key"];
@@ -37,6 +39,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/notifications"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -61,6 +77,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<AuditLogMiddleware>();
 app.MapControllers();
+app.MapHub<NotificationsHub>("/hubs/notifications");
 
 using (var scope = app.Services.CreateScope())
 {
@@ -78,6 +95,8 @@ static void ApplyEnvironmentOverrides(IConfiguration configuration)
     SetIfPresent(configuration, "JWT_AUDIENCE", "Jwt:Audience");
     SetIfPresent(configuration, "PYTHON_EXECUTABLE_PATH", "ML:PythonExecutable");
     SetIfPresent(configuration, "ML_SCRIPT_PATH", "ML:PredictionScriptPath");
+    SetIfPresent(configuration, "REDIS_CONNECTION_STRING", "Redis:ConnectionString");
+    SetIfPresent(configuration, "REDIS_INSTANCE_NAME", "Redis:InstanceName");
 }
 
 static void SetIfPresent(IConfiguration configuration, string envName, string configKey)

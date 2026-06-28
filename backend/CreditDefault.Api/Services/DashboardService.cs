@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CreditDefault.Api.Data;
 using CreditDefault.Api.DTOs;
+using CreditDefault.Api.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace CreditDefault.Api.Services
@@ -12,21 +13,27 @@ namespace CreditDefault.Api.Services
     public class DashboardService
     {
         private readonly AppDbContext _context;
+        private readonly ICacheService _cache;
 
-        public DashboardService(AppDbContext context)
+        public DashboardService(AppDbContext context, ICacheService cache)
         {
             _context = context;
+            _cache = cache;
         }
 
         public async Task<DashboardSummaryDto> GetSummaryAsync(Guid userId, bool isAdmin)
         {
+            var key = isAdmin ? CacheKeys.DashboardAdmin : CacheKeys.DashboardUser(userId);
+            var cached = await _cache.GetAsync<DashboardSummaryDto>(key);
+            if (cached != null) return cached;
+
             var predictions = GetPredictionsScope(userId, isAdmin);
             var totalPredictions = await predictions.CountAsync();
             var avgRisk = totalPredictions == 0
                 ? 0
                 : await predictions.AverageAsync(p => p.RiskScore);
 
-            return new DashboardSummaryDto
+            var summary = new DashboardSummaryDto
             {
                 TotalClients = isAdmin
                     ? await _context.ClientProfiles.CountAsync()
@@ -39,6 +46,9 @@ namespace CreditDefault.Api.Services
                 ApprovedLoans = await predictions.CountAsync(p => p.RiskLevel == "Low"),
                 AverageDefaultRisk = Math.Round((decimal)avgRisk, 1)
             };
+
+            await _cache.SetAsync(key, summary, TimeSpan.FromMinutes(5));
+            return summary;
         }
 
         public async Task<DashboardDto> GetDashboardAsync(Guid userId, bool isAdmin)
@@ -113,10 +123,15 @@ namespace CreditDefault.Api.Services
 
         public async Task<IReadOnlyList<DashboardPredictionDto>> GetRecentPredictionsAsync(Guid userId, bool isAdmin, int limit = 5)
         {
-            return await GetPredictionsScope(userId, isAdmin)
+            var safeLimit = Math.Clamp(limit, 1, 50);
+            var key = CacheKeys.PredictionsRecent(userId, isAdmin, safeLimit);
+            var cached = await _cache.GetAsync<List<DashboardPredictionDto>>(key);
+            if (cached != null) return cached;
+
+            var predictions = await GetPredictionsScope(userId, isAdmin)
                 .Include(p => p.User)
                 .OrderByDescending(p => p.CreatedAt)
-                .Take(Math.Clamp(limit, 1, 50))
+                .Take(safeLimit)
                 .Select(p => new DashboardPredictionDto
                 {
                     Id = p.Id,
@@ -129,6 +144,20 @@ namespace CreditDefault.Api.Services
                     Explanation = p.ExplanationMessage
                 })
                 .ToListAsync();
+
+            await _cache.SetAsync(key, predictions, TimeSpan.FromMinutes(2));
+            return predictions;
+        }
+
+        public async Task InvalidatePredictionCachesAsync(Guid userId)
+        {
+            await _cache.RemoveAsync(CacheKeys.DashboardUser(userId));
+            await _cache.RemoveAsync(CacheKeys.DashboardAdmin);
+            foreach (var limit in new[] { 5, 10, 20, 50 })
+            {
+                await _cache.RemoveAsync(CacheKeys.PredictionsRecent(userId, false, limit));
+                await _cache.RemoveAsync(CacheKeys.PredictionsRecent(userId, true, limit));
+            }
         }
 
         private IQueryable<CreditDefault.Api.Models.Prediction> GetPredictionsScope(Guid userId, bool isAdmin)

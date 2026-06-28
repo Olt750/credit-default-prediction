@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/app/Sidebar";
 import { Navbar } from "@/components/app/Navbar";
 import { MobileNav } from "@/components/app/MobileNav";
 import { useAuth } from "@/lib/auth";
+import { NotificationsProvider } from "@/lib/notifications";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -26,15 +27,17 @@ function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar />
-      <div className="flex-1 min-w-0 flex flex-col">
-        <Navbar />
-        <main className="flex-1 px-4 lg:px-8 py-6 pb-24 lg:pb-10">
-          <Outlet />
-        </main>
+    <NotificationsProvider>
+      <div className="min-h-screen flex">
+        <Sidebar />
+        <div className="flex-1 min-w-0 flex flex-col">
+          <Navbar />
+          <main className="flex-1 px-4 lg:px-8 py-6 pb-24 lg:pb-10">
+            <Outlet />
+          </main>
+        </div>
+        <MobileNav />
       </div>
-      <MobileNav />
-    </div>
+    </NotificationsProvider>
   );
 }

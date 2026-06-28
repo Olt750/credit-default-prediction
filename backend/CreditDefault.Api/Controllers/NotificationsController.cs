@@ -15,7 +15,8 @@ namespace CreditDefault.Api.Controllers
         public NotificationsController(NotificationService service) => _service = service;
 
         [HttpGet]
-        public async Task<IActionResult> Get() => Ok(await _service.GetForUserAsync(GetUserId()));
+        public async Task<IActionResult> Get([FromQuery] int page = 1, [FromQuery] int pageSize = 20) =>
+            Ok(await _service.GetForUserAsync(GetUserId(), page, pageSize));
 
         [HttpGet("unread-count")]
         public async Task<IActionResult> GetUnreadCount() => Ok(new { count = await _service.GetUnreadCountAsync(GetUserId()) });

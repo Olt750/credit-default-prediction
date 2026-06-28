@@ -21,6 +21,8 @@ $env:JWT_ISSUER="CreditDefaultApi"
 $env:JWT_AUDIENCE="CreditDefaultFrontend"
 $env:PYTHON_EXECUTABLE_PATH="python"
 $env:ML_SCRIPT_PATH="ml\predict_credit_risk.py"
+$env:REDIS_CONNECTION_STRING="localhost:6379"
+$env:REDIS_INSTANCE_NAME="CreditDefault"
 ```
 
 Use `.env.example` as the safe placeholder reference. Do not commit real secrets.
@@ -48,6 +50,45 @@ dotnet run --project backend\CreditDefault.Api\CreditDefault.Api.csproj
 ```
 
 The frontend calls `http://localhost:5086/api` by default.
+
+## Redis / NoSQL Setup
+
+Redis is used as the Lab Course 2 NoSQL component for cache-backed application data:
+
+- dashboard summaries: `dashboard:user:{userId}`, `dashboard:admin`
+- recent predictions: `predictions:recent:{userId}:{limit}`, `predictions:recent:admin:{limit}`
+- notifications: `notifications:unread:{userId}`, `notifications:list:{userId}:page:{page}:size:{pageSize}`
+
+Run Redis locally with Docker:
+
+```powershell
+docker run --name creditdefault-redis -p 6379:6379 -d redis:latest
+```
+
+Check that Redis is running:
+
+```powershell
+docker ps --filter "name=creditdefault-redis"
+docker exec -it creditdefault-redis redis-cli ping
+```
+
+Set `REDIS_CONNECTION_STRING` to your Redis endpoint. If Redis is offline or unavailable, the API logs cache warnings and continues serving requests from SQL Server.
+
+## Real-Time Notifications
+
+SignalR is exposed at:
+
+```http
+/hubs/notifications
+```
+
+Authenticated clients join `user:{userId}` and role groups such as `role:Admin`. Events include:
+
+- `NotificationReceived`
+- `UnreadCountUpdated`
+- `PredictionCompleted`
+- `HighRiskAlert`
+- `SettingsChanged`
 
 ## Frontend Setup
 

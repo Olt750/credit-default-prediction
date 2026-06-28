@@ -27,11 +27,13 @@ namespace CreditDefault.Api.Configuration
             services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddSingleton<ICacheService, RedisCacheService>();
             services.AddScoped<JwtService>();
             services.AddScoped<PasswordService>();
             services.AddScoped<AuthService>();
             services.AddScoped<RefreshTokenService>();
             services.AddScoped<PredictionEngine>();
+            services.AddScoped<PredictionWorkflowService>();
             services.AddScoped<PythonCreditRiskPredictionService>();
             services.AddScoped<DashboardService>();
             services.AddScoped<AuditLogService>();
