@@ -3,6 +3,7 @@ using CreditDefault.Api.Data;
 using CreditDefault.Api.Hubs;
 using CreditDefault.Api.Middleware;
 using CreditDefault.Api.Authorization;
+using CreditDefault.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -83,6 +84,12 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+    if (app.Environment.IsDevelopment())
+    {
+        var adminSeeder = scope.ServiceProvider.GetRequiredService<DevelopmentAdminSeeder>();
+        await adminSeeder.SeedAsync();
+    }
 }
 
 app.Run();
@@ -97,6 +104,8 @@ static void ApplyEnvironmentOverrides(IConfiguration configuration)
     SetIfPresent(configuration, "ML_SCRIPT_PATH", "ML:PredictionScriptPath");
     SetIfPresent(configuration, "REDIS_CONNECTION_STRING", "Redis:ConnectionString");
     SetIfPresent(configuration, "REDIS_INSTANCE_NAME", "Redis:InstanceName");
+    SetIfPresent(configuration, "ADMIN_EMAIL", "AdminSeed:Email");
+    SetIfPresent(configuration, "ADMIN_PASSWORD", "AdminSeed:Password");
 }
 
 static void SetIfPresent(IConfiguration configuration, string envName, string configKey)
