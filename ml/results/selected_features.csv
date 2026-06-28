@@ -1,0 +1,61 @@
+method,k,feature
+SelectKBest,5,laufkont
+SelectKBest,5,laufzeit
+SelectKBest,5,moral
+SelectKBest,5,hoehe
+SelectKBest,5,sparkont
+Random Forest Importance,5,hoehe
+Random Forest Importance,5,laufkont
+Random Forest Importance,5,laufzeit
+Random Forest Importance,5,alter
+Random Forest Importance,5,verw
+SelectKBest,10,laufkont
+SelectKBest,10,laufzeit
+SelectKBest,10,moral
+SelectKBest,10,hoehe
+SelectKBest,10,sparkont
+SelectKBest,10,beszeit
+SelectKBest,10,famges
+SelectKBest,10,verm
+SelectKBest,10,weitkred
+SelectKBest,10,gastarb
+Random Forest Importance,10,hoehe
+Random Forest Importance,10,laufkont
+Random Forest Importance,10,laufzeit
+Random Forest Importance,10,alter
+Random Forest Importance,10,verw
+Random Forest Importance,10,sparkont
+Random Forest Importance,10,moral
+Random Forest Importance,10,beszeit
+Random Forest Importance,10,verm
+Random Forest Importance,10,rate
+SelectKBest,15,laufkont
+SelectKBest,15,laufzeit
+SelectKBest,15,moral
+SelectKBest,15,hoehe
+SelectKBest,15,sparkont
+SelectKBest,15,beszeit
+SelectKBest,15,rate
+SelectKBest,15,famges
+SelectKBest,15,buerge
+SelectKBest,15,verm
+SelectKBest,15,alter
+SelectKBest,15,weitkred
+SelectKBest,15,bishkred
+SelectKBest,15,beruf
+SelectKBest,15,gastarb
+Random Forest Importance,15,hoehe
+Random Forest Importance,15,laufkont
+Random Forest Importance,15,laufzeit
+Random Forest Importance,15,alter
+Random Forest Importance,15,verw
+Random Forest Importance,15,sparkont
+Random Forest Importance,15,moral
+Random Forest Importance,15,beszeit
+Random Forest Importance,15,verm
+Random Forest Importance,15,rate
+Random Forest Importance,15,wohnzeit
+Random Forest Importance,15,beruf
+Random Forest Importance,15,famges
+Random Forest Importance,15,weitkred
+Random Forest Importance,15,wohn

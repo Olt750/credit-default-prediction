@@ -1,66 +1,122 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Network, Cpu } from "lucide-react";
+import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/app/PageHeader";
-import { nnArchitectures } from "@/data/mockData";
+import { NeuralNetworkRow, getMlResult } from "@/services/mlResultsApi";
 
 export const Route = createFileRoute("/_app/neural-network")({
   component: NNPage,
 });
 
+function percent(value: number) {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
 function NNPage() {
+  const [architectures, setArchitectures] = useState<NeuralNetworkRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getMlResult<NeuralNetworkRow[]>("neural-network-results")
+      .then((data) => active && setArchitectures(data))
+      .catch((err) => active && setError(err instanceof Error ? err.message : "Unable to load neural network results."))
+      .finally(() => active && setLoading(false));
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const best = architectures.reduce<NeuralNetworkRow | null>((winner, row) => {
+    if (!winner) return row;
+    return row.f1 > winner.f1 ? row : winner;
+  }, null);
+
   return (
     <>
-      <PageHeader title="Neural Network" subtitle="Compare candidate architectures considered for the final classifier." />
+      <PageHeader title="Neural Network" subtitle="Real MLPClassifier architecture comparison on German Credit test data." />
 
-      <div className="grid lg:grid-cols-2 gap-4">
-        {nnArchitectures.map((a, idx) => (
-          <div key={a.name} className="glass rounded-2xl p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="size-9 rounded-xl gradient-hero flex items-center justify-center text-white">
-                  <Network className="size-4" />
-                </div>
-                <div>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Variant {idx + 1}</div>
-                  <div className="font-semibold">{a.name}</div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-xs text-muted-foreground">Accuracy</div>
-                <div className="text-2xl font-semibold gradient-text">{(a.accuracy * 100).toFixed(1)}%</div>
-              </div>
-            </div>
+      {loading && <div className="glass rounded-2xl p-6 text-sm text-muted-foreground">Loading neural network results...</div>}
+      {error && <div className="glass rounded-2xl p-6 text-sm text-destructive">{error}</div>}
 
-            <div className="mt-6 space-y-2">
-              {a.layers.map((l, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="size-7 rounded-lg bg-muted/60 border border-border text-xs flex items-center justify-center font-mono">{i + 1}</div>
-                  <div className="flex-1 rounded-lg bg-muted/40 border border-border px-3 py-2 text-sm">{l}</div>
+      {!loading && !error && (
+        <>
+          <div className="grid lg:grid-cols-3 gap-4">
+            {architectures.map((a, idx) => (
+              <div key={a.architecture} className="glass rounded-2xl p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="size-9 rounded-xl gradient-hero flex items-center justify-center text-white">
+                      <Network className="size-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground">Variant {idx + 1}</div>
+                      <div className="font-semibold">{a.architecture}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground">F1</div>
+                    <div className="text-2xl font-semibold gradient-text">{percent(a.f1)}</div>
+                  </div>
                 </div>
-              ))}
-            </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-muted/40 p-3">
-                <div className="text-xs text-muted-foreground">Loss</div>
-                <div className="font-semibold mt-1 font-mono">{a.loss.toFixed(2)}</div>
+                <div className="mt-6 space-y-2">
+                  {a.layers.map((layer, i) => (
+                    <div key={layer} className="flex items-center gap-3">
+                      <div className="size-7 rounded-lg bg-muted/60 border border-border text-xs flex items-center justify-center font-mono">{i + 1}</div>
+                      <div className="flex-1 rounded-lg bg-muted/40 border border-border px-3 py-2 text-sm">{layer}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                  <Metric label="Accuracy" value={percent(a.accuracy)} />
+                  <Metric label="Recall" value={percent(a.recall)} />
+                  <Metric label="Precision" value={percent(a.precision)} />
+                  <Metric label="ROC-AUC" value={percent(a.roc_auc)} />
+                  <Metric label="Activation" value={a.activation} />
+                  <Metric label="Seconds" value={a.training_time_seconds.toFixed(2)} />
+                </div>
+
+                <div className="mt-5 grid grid-cols-4 gap-1.5 text-center text-xs">
+                  <Matrix label="TN" value={a.confusion_matrix.tn} />
+                  <Matrix label="FP" value={a.confusion_matrix.fp} />
+                  <Matrix label="FN" value={a.confusion_matrix.fn} />
+                  <Matrix label="TP" value={a.confusion_matrix.tp} />
+                </div>
               </div>
-              <div className="rounded-xl bg-muted/40 p-3">
-                <div className="text-xs text-muted-foreground">Params</div>
-                <div className="font-semibold mt-1 font-mono">{idx === 0 ? "~1.2k" : "~3.4k"}</div>
-              </div>
+            ))}
+          </div>
+
+          <div className="glass rounded-2xl p-6 mt-4 flex gap-3 items-start">
+            <Cpu className="size-5 text-accent shrink-0 mt-0.5" />
+            <div className="text-sm text-muted-foreground">
+              {best ? `${best.architecture} performed best by F1-score. ` : ""}
+              All neural network metrics are generated by `ml/train_model.py`; larger hidden layers improved capacity in this run, but the small dataset still creates overfitting risk.
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="glass rounded-2xl p-6 mt-4 flex gap-3 items-start">
-        <Cpu className="size-5 text-accent shrink-0 mt-0.5" />
-        <div className="text-sm text-muted-foreground">
-          Architecture B wins on validation accuracy at the cost of a larger parameter count.
-          Future iterations will explore dropout, batch normalization, and class-weight tuning.
-        </div>
-      </div>
+        </>
+      )}
     </>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-muted/40 p-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="font-semibold mt-1 font-mono">{value}</div>
+    </div>
+  );
+}
+
+function Matrix({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg bg-muted/40 border border-border p-2">
+      <div className="text-[10px] text-muted-foreground">{label}</div>
+      <div className="font-mono font-semibold">{value}</div>
+    </div>
   );
 }

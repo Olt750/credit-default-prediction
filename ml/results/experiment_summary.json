@@ -1,0 +1,121 @@
+{
+  "dataset_shape": [
+    1000,
+    21
+  ],
+  "missing_values": {
+    "laufkont": 0,
+    "laufzeit": 0,
+    "moral": 0,
+    "verw": 0,
+    "hoehe": 0,
+    "sparkont": 0,
+    "beszeit": 0,
+    "rate": 0,
+    "famges": 0,
+    "buerge": 0,
+    "wohnzeit": 0,
+    "verm": 0,
+    "alter": 0,
+    "weitkred": 0,
+    "wohn": 0,
+    "bishkred": 0,
+    "beruf": 0,
+    "pers": 0,
+    "telef": 0,
+    "gastarb": 0,
+    "kredit": 0
+  },
+  "numerical_features": [
+    "laufkont",
+    "laufzeit",
+    "moral",
+    "verw",
+    "hoehe",
+    "sparkont",
+    "beszeit",
+    "rate",
+    "famges",
+    "buerge",
+    "wohnzeit",
+    "verm",
+    "alter",
+    "weitkred",
+    "wohn",
+    "bishkred",
+    "beruf",
+    "pers",
+    "telef",
+    "gastarb"
+  ],
+  "categorical_features": [
+    "laufkont",
+    "moral",
+    "verw",
+    "sparkont",
+    "beszeit",
+    "famges",
+    "buerge",
+    "verm",
+    "weitkred",
+    "wohn",
+    "beruf",
+    "pers",
+    "telef",
+    "gastarb"
+  ],
+  "target": "kredit",
+  "class_distribution": {
+    "0": 300,
+    "1": 700
+  },
+  "train_rows": 800,
+  "test_rows": 200,
+  "best_model": "Logistic Regression",
+  "best_model_f1": 0.6571428571428571,
+  "best_feature_selection": {
+    "method": "SelectKBest",
+    "k": 10,
+    "selected_features": "laufkont,laufzeit,moral,hoehe,sparkont,beszeit,famges,verm,weitkred,gastarb",
+    "test_accuracy": 0.77,
+    "test_precision": 0.5897435897435898,
+    "test_recall": 0.7666666666666667,
+    "test_f1": 0.6666666666666666,
+    "test_roc_auc": 0.816547619047619
+  },
+  "best_neural_network": {
+    "architecture": "Architecture 2",
+    "hidden_layer_sizes": [
+      128,
+      64,
+      32
+    ],
+    "activation": "relu",
+    "solver": "adam",
+    "learning_rate_init": 0.001,
+    "layers": [
+      "Input (20)",
+      "Dense 128 - relu",
+      "Dense 64 - relu",
+      "Dense 32 - relu",
+      "Output - default risk class"
+    ],
+    "training_time_seconds": 0.26108539999404456,
+    "accuracy": 0.795,
+    "precision": 0.7317073170731707,
+    "recall": 0.5,
+    "f1": 0.594059405940594,
+    "roc_auc": 0.8077380952380954,
+    "confusion_matrix": {
+      "tn": 129,
+      "fp": 11,
+      "fn": 30,
+      "tp": 30,
+      "labels": [
+        "Good credit",
+        "Bad credit"
+      ]
+    }
+  },
+  "best_cluster_k": 5
+}

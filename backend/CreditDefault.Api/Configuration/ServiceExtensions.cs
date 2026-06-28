@@ -50,6 +50,7 @@ namespace CreditDefault.Api.Configuration
             services.AddScoped<ReportService>();
             services.AddScoped<DataExportService>();
             services.AddScoped<DataImportService>();
+            services.AddScoped<MlResultsService>();
             return services;
         }
     }

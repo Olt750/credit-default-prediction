@@ -1,0 +1,72 @@
+[
+  {
+    "method": "SelectKBest",
+    "k": 10,
+    "selected_features": "laufkont,laufzeit,moral,hoehe,sparkont,beszeit,famges,verm,weitkred,gastarb",
+    "test_accuracy": 0.77,
+    "test_precision": 0.5897435897435898,
+    "test_recall": 0.7666666666666667,
+    "test_f1": 0.6666666666666666,
+    "test_roc_auc": 0.816547619047619
+  },
+  {
+    "method": "SelectKBest",
+    "k": 5,
+    "selected_features": "laufkont,laufzeit,moral,hoehe,sparkont",
+    "test_accuracy": 0.74,
+    "test_precision": 0.5454545454545454,
+    "test_recall": 0.8,
+    "test_f1": 0.6486486486486487,
+    "test_roc_auc": 0.8180952380952381
+  },
+  {
+    "method": "SelectKBest",
+    "k": 15,
+    "selected_features": "laufkont,laufzeit,moral,hoehe,sparkont,beszeit,rate,famges,buerge,verm,alter,weitkred,bishkred,beruf,gastarb",
+    "test_accuracy": 0.74,
+    "test_precision": 0.5487804878048781,
+    "test_recall": 0.75,
+    "test_f1": 0.6338028169014085,
+    "test_roc_auc": 0.8244047619047619
+  },
+  {
+    "method": "Random Forest Importance",
+    "k": 15,
+    "selected_features": "hoehe,laufkont,laufzeit,alter,verw,sparkont,moral,beszeit,verm,rate,wohnzeit,beruf,famges,weitkred,wohn",
+    "test_accuracy": 0.805,
+    "test_precision": 0.7837837837837838,
+    "test_recall": 0.48333333333333334,
+    "test_f1": 0.5979381443298969,
+    "test_roc_auc": 0.8130952380952381
+  },
+  {
+    "method": "Random Forest Importance",
+    "k": 10,
+    "selected_features": "hoehe,laufkont,laufzeit,alter,verw,sparkont,moral,beszeit,verm,rate",
+    "test_accuracy": 0.79,
+    "test_precision": 0.7368421052631579,
+    "test_recall": 0.4666666666666667,
+    "test_f1": 0.5714285714285714,
+    "test_roc_auc": 0.7920238095238095
+  },
+  {
+    "method": "All Features",
+    "k": 20,
+    "selected_features": "laufkont,laufzeit,moral,verw,hoehe,sparkont,beszeit,rate,famges,buerge,wohnzeit,verm,alter,weitkred,wohn,bishkred,beruf,pers,telef,gastarb",
+    "test_accuracy": 0.795,
+    "test_precision": 0.7878787878787878,
+    "test_recall": 0.43333333333333335,
+    "test_f1": 0.5591397849462365,
+    "test_roc_auc": 0.8264285714285715
+  },
+  {
+    "method": "Random Forest Importance",
+    "k": 5,
+    "selected_features": "hoehe,laufkont,laufzeit,alter,verw",
+    "test_accuracy": 0.7,
+    "test_precision": 0.5,
+    "test_recall": 0.38333333333333336,
+    "test_f1": 0.4339622641509434,
+    "test_roc_auc": 0.7282142857142857
+  }
+]

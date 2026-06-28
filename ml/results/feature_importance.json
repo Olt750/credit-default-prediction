@@ -1,0 +1,102 @@
+[
+  {
+    "feature": "hoehe",
+    "description": "credit amount",
+    "importance": 0.1258172679043905
+  },
+  {
+    "feature": "laufkont",
+    "description": "checking account status",
+    "importance": 0.12463141824963607
+  },
+  {
+    "feature": "laufzeit",
+    "description": "credit duration in months",
+    "importance": 0.10206317113731829
+  },
+  {
+    "feature": "alter",
+    "description": "age in years",
+    "importance": 0.10051004625763446
+  },
+  {
+    "feature": "verw",
+    "description": "loan purpose",
+    "importance": 0.061351696229870814
+  },
+  {
+    "feature": "sparkont",
+    "description": "savings account status",
+    "importance": 0.05746538978087286
+  },
+  {
+    "feature": "moral",
+    "description": "credit history",
+    "importance": 0.05212169982281221
+  },
+  {
+    "feature": "beszeit",
+    "description": "employment duration",
+    "importance": 0.04972661393605764
+  },
+  {
+    "feature": "verm",
+    "description": "property category",
+    "importance": 0.044680365081180305
+  },
+  {
+    "feature": "rate",
+    "description": "installment rate as income percentage",
+    "importance": 0.04208334812628928
+  },
+  {
+    "feature": "wohnzeit",
+    "description": "years at current residence",
+    "importance": 0.03766209184564216
+  },
+  {
+    "feature": "beruf",
+    "description": "job category",
+    "importance": 0.034698282316291726
+  },
+  {
+    "feature": "famges",
+    "description": "personal status and sex",
+    "importance": 0.03453164522458737
+  },
+  {
+    "feature": "weitkred",
+    "description": "other installment plans",
+    "importance": 0.023902932666609922
+  },
+  {
+    "feature": "wohn",
+    "description": "housing status",
+    "importance": 0.023375710386866925
+  },
+  {
+    "feature": "buerge",
+    "description": "other debtors or guarantors",
+    "importance": 0.02226061779413209
+  },
+  {
+    "feature": "bishkred",
+    "description": "number of existing credits",
+    "importance": 0.021382208487239648
+  },
+  {
+    "feature": "telef",
+    "description": "telephone ownership",
+    "importance": 0.018685320114863048
+  },
+  {
+    "feature": "pers",
+    "description": "number of liable people",
+    "importance": 0.015037528535641637
+  },
+  {
+    "feature": "gastarb",
+    "description": "foreign worker indicator",
+    "importance": 0.008012646102062983
+  }
+]

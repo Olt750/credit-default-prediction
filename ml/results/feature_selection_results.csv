@@ -1,0 +1,8 @@
+method,k,selected_features,test_accuracy,test_precision,test_recall,test_f1,test_roc_auc
+SelectKBest,10,"laufkont,laufzeit,moral,hoehe,sparkont,beszeit,famges,verm,weitkred,gastarb",0.77,0.5897435897435898,0.7666666666666667,0.6666666666666666,0.816547619047619
+SelectKBest,5,"laufkont,laufzeit,moral,hoehe,sparkont",0.74,0.5454545454545454,0.8,0.6486486486486487,0.8180952380952381
+SelectKBest,15,"laufkont,laufzeit,moral,hoehe,sparkont,beszeit,rate,famges,buerge,verm,alter,weitkred,bishkred,beruf,gastarb",0.74,0.5487804878048781,0.75,0.6338028169014085,0.8244047619047619
+Random Forest Importance,15,"hoehe,laufkont,laufzeit,alter,verw,sparkont,moral,beszeit,verm,rate,wohnzeit,beruf,famges,weitkred,wohn",0.805,0.7837837837837838,0.48333333333333334,0.5979381443298969,0.8130952380952381
+Random Forest Importance,10,"hoehe,laufkont,laufzeit,alter,verw,sparkont,moral,beszeit,verm,rate",0.79,0.7368421052631579,0.4666666666666667,0.5714285714285714,0.7920238095238095
+All Features,20,"laufkont,laufzeit,moral,verw,hoehe,sparkont,beszeit,rate,famges,buerge,wohnzeit,verm,alter,weitkred,wohn,bishkred,beruf,pers,telef,gastarb",0.795,0.7878787878787878,0.43333333333333335,0.5591397849462365,0.8264285714285715
+Random Forest Importance,5,"hoehe,laufkont,laufzeit,alter,verw",0.7,0.5,0.38333333333333336,0.4339622641509434,0.7282142857142857

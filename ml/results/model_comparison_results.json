@@ -1,0 +1,152 @@
+[
+  {
+    "model": "Logistic Regression",
+    "tested_hyperparameters": "{\"C\": [0.01, 0.1, 1.0, 10.0], \"penalty\": [\"l2\"], \"solver\": [\"lbfgs\", \"liblinear\"]}",
+    "best_hyperparameters": "{\"C\": 0.01, \"penalty\": \"l2\", \"solver\": \"lbfgs\"}",
+    "cv_score": 0.5939596614308479,
+    "baseline_accuracy": 0.72,
+    "baseline_precision": 0.5238095238095238,
+    "baseline_recall": 0.7333333333333333,
+    "baseline_f1": 0.6111111111111112,
+    "test_accuracy": 0.76,
+    "test_precision": 0.575,
+    "test_recall": 0.7666666666666667,
+    "test_f1": 0.6571428571428571,
+    "roc_auc": 0.825952380952381,
+    "confusion_matrix": {
+      "tn": 106,
+      "fp": 34,
+      "fn": 14,
+      "tp": 46,
+      "labels": [
+        "Good credit",
+        "Bad credit"
+      ]
+    }
+  },
+  {
+    "model": "Random Forest",
+    "tested_hyperparameters": "{\"n_estimators\": [100, 200], \"max_depth\": [5, 10, null], \"min_samples_split\": [2, 10], \"min_samples_leaf\": [1, 5], \"max_features\": [\"sqrt\", \"log2\"]}",
+    "best_hyperparameters": "{\"max_depth\": 5, \"max_features\": \"sqrt\", \"min_samples_leaf\": 1, \"min_samples_split\": 10, \"n_estimators\": 100}",
+    "cv_score": 0.6161766872239663,
+    "baseline_accuracy": 0.76,
+    "baseline_precision": 0.6764705882352942,
+    "baseline_recall": 0.38333333333333336,
+    "baseline_f1": 0.48936170212765956,
+    "test_accuracy": 0.765,
+    "test_precision": 0.5915492957746479,
+    "test_recall": 0.7,
+    "test_f1": 0.6412213740458015,
+    "roc_auc": 0.8186904761904763,
+    "confusion_matrix": {
+      "tn": 111,
+      "fp": 29,
+      "fn": 18,
+      "tp": 42,
+      "labels": [
+        "Good credit",
+        "Bad credit"
+      ]
+    }
+  },
+  {
+    "model": "Support Vector Machine",
+    "tested_hyperparameters": "{\"C\": [0.1, 1.0, 10.0], \"kernel\": [\"rbf\", \"linear\"], \"gamma\": [\"scale\", \"auto\"]}",
+    "best_hyperparameters": "{\"C\": 1.0, \"gamma\": \"scale\", \"kernel\": \"rbf\"}",
+    "cv_score": 0.5990891578624506,
+    "baseline_accuracy": 0.735,
+    "baseline_precision": 0.5443037974683544,
+    "baseline_recall": 0.7166666666666667,
+    "baseline_f1": 0.6187050359712231,
+    "test_accuracy": 0.735,
+    "test_precision": 0.5443037974683544,
+    "test_recall": 0.7166666666666667,
+    "test_f1": 0.6187050359712231,
+    "roc_auc": 0.8228571428571428,
+    "confusion_matrix": {
+      "tn": 104,
+      "fp": 36,
+      "fn": 17,
+      "tp": 43,
+      "labels": [
+        "Good credit",
+        "Bad credit"
+      ]
+    }
+  },
+  {
+    "model": "Neural Network",
+    "tested_hyperparameters": "{\"hidden_layer_sizes\": [[64, 32], [128, 64, 32], [32, 16]], \"activation\": [\"relu\", \"tanh\"], \"alpha\": [0.0001, 0.001], \"learning_rate_init\": [0.001, 0.01], \"max_iter\": [300]}",
+    "best_hyperparameters": "{\"activation\": \"tanh\", \"alpha\": 0.0001, \"hidden_layer_sizes\": [32, 16], \"learning_rate_init\": 0.001, \"max_iter\": 300}",
+    "cv_score": 0.5508571077225775,
+    "baseline_accuracy": 0.8,
+    "baseline_precision": 0.7380952380952381,
+    "baseline_recall": 0.5166666666666667,
+    "baseline_f1": 0.6078431372549019,
+    "test_accuracy": 0.78,
+    "test_precision": 0.6818181818181818,
+    "test_recall": 0.5,
+    "test_f1": 0.5769230769230769,
+    "roc_auc": 0.8155952380952382,
+    "confusion_matrix": {
+      "tn": 126,
+      "fp": 14,
+      "fn": 30,
+      "tp": 30,
+      "labels": [
+        "Good credit",
+        "Bad credit"
+      ]
+    }
+  },
+  {
+    "model": "Decision Tree",
+    "tested_hyperparameters": "{\"max_depth\": [3, 5, 8, null], \"min_samples_split\": [2, 10, 20], \"min_samples_leaf\": [1, 5, 10], \"criterion\": [\"gini\", \"entropy\"]}",
+    "best_hyperparameters": "{\"criterion\": \"gini\", \"max_depth\": 5, \"min_samples_leaf\": 5, \"min_samples_split\": 20}",
+    "cv_score": 0.5730530074278005,
+    "baseline_accuracy": 0.71,
+    "baseline_precision": 0.52,
+    "baseline_recall": 0.43333333333333335,
+    "baseline_f1": 0.4727272727272727,
+    "test_accuracy": 0.675,
+    "test_precision": 0.47191011235955055,
+    "test_recall": 0.7,
+    "test_f1": 0.5637583892617449,
+    "roc_auc": 0.6983928571428571,
+    "confusion_matrix": {
+      "tn": 93,
+      "fp": 47,
+      "fn": 18,
+      "tp": 42,
+      "labels": [
+        "Good credit",
+        "Bad credit"
+      ]
+    }
+  },
+  {
+    "model": "K-Nearest Neighbors",
+    "tested_hyperparameters": "{\"n_neighbors\": [3, 5, 7, 11], \"weights\": [\"uniform\", \"distance\"], \"metric\": [\"euclidean\", \"manhattan\"]}",
+    "best_hyperparameters": "{\"metric\": \"manhattan\", \"n_neighbors\": 5, \"weights\": \"distance\"}",
+    "cv_score": 0.47963091137058916,
+    "baseline_accuracy": 0.72,
+    "baseline_precision": 0.5454545454545454,
+    "baseline_recall": 0.4,
+    "baseline_f1": 0.46153846153846156,
+    "test_accuracy": 0.71,
+    "test_precision": 0.5277777777777778,
+    "test_recall": 0.31666666666666665,
+    "test_f1": 0.3958333333333333,
+    "roc_auc": 0.7324404761904761,
+    "confusion_matrix": {
+      "tn": 123,
+      "fp": 17,
+      "fn": 41,
+      "tp": 19,
+      "labels": [
+        "Good credit",
+        "Bad credit"
+      ]
+    }
+  }
+]

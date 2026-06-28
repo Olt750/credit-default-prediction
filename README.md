@@ -203,7 +203,7 @@ GET /api/search/reports
 
 Users can only search/export their own predictions, profile, notifications, and reports. Admin can access all supported lists. Manager can access reports and predictions where authorization allows it. Frontend search/filter controls were added to Users, Predictions, Client Analysis, Notifications, and Reports.
 
-## ML Setup
+## Machine Learning Experiments And Reporting
 
 ```powershell
 cd ml
@@ -212,12 +212,114 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-The backend sends prediction payloads to `ml/predict_credit_risk.py`, which loads:
+Dataset:
+
+- `ml/dataset/german_credit_data.csv`
+- 1,000 German Credit applications
+- target column: `kredit`
+- target mapping: `0` = bad/default-risk credit, `1` = good/non-default credit
+
+Run the full experiment pipeline:
+
+```powershell
+cd ml
+.\.venv\Scripts\python.exe train_model.py
+```
+
+Open the project notebook:
+
+```powershell
+cd ml
+jupyter notebook notebooks/credit_risk_analysis.ipynb
+```
+
+The notebook documents:
+
+- dataset description and target definition
+- missing-value and class-distribution checks
+- categorical/numerical feature handling
+- stratified train/test split
+- model training and evaluation
+- hyperparameter tuning
+- feature selection
+- neural network architecture comparison
+- KMeans clustering
+- final model discussion, limitations, and future work
+
+Implemented classifiers:
+
+- Logistic Regression
+- K-Nearest Neighbors
+- Decision Tree
+- Random Forest
+- Neural Network / MLPClassifier
+- Support Vector Machine
+
+Each classifier is tuned with GridSearchCV and evaluated with accuracy, precision, recall, F1-score, ROC-AUC, and confusion matrix values on the same stratified test set. Hyperparameter grids are stored in `ml/train_model.py` and the generated comparison files.
+
+Feature selection / reduction:
+
+- SelectKBest with top 5, top 10, and top 15 features
+- Random Forest feature importance with top 5, top 10, and top 15 features
+
+Neural network experiments:
+
+- Architecture 1: hidden layers `(64, 32)`, ReLU, Adam, learning rate `0.001`
+- Architecture 2: hidden layers `(128, 64, 32)`, ReLU, Adam, learning rate `0.001`
+- Architecture 3: hidden layers `(32, 16)`, tanh, Adam, learning rate `0.001`
+
+Clustering experiments:
+
+- KMeans with `k = 2, 3, 4, 5`
+- metrics: silhouette score, inertia, Adjusted Rand Index
+- PCA scatter data and charts are generated without using the target label during clustering
+
+Generated result files:
+
+- `ml/results/model_comparison_results.csv`
+- `ml/results/model_comparison_results.json`
+- `ml/results/feature_importance.csv`
+- `ml/results/feature_importance.json`
+- `ml/results/selected_features.csv`
+- `ml/results/feature_selection_results.csv`
+- `ml/results/feature_selection_results.json`
+- `ml/results/neural_network_results.csv`
+- `ml/results/neural_network_results.json`
+- `ml/results/clustering_results.csv`
+- `ml/results/clustering_results.json`
+- `ml/results/clustering_points.json`
+- `ml/results/experiment_summary.json`
+- chart PNGs for feature importance, neural networks, and KMeans clustering
+
+Generated model artifacts:
 
 - `ml/models/credit_risk_model.pkl`
+- `ml/models/best_credit_model.pkl`
+- `ml/models/preprocessor.pkl`
 - `ml/models/scaler.pkl`
+- `ml/models/feature_columns.pkl`
+- `ml/models/model_metadata.json`
+
+The backend sends prediction payloads to `ml/predict_credit_risk.py`, which loads the final trained model pipeline and keeps fallback compatibility with the older model/scaler artifacts.
 
 Set `PYTHON_EXECUTABLE_PATH` when the API should use a specific virtual environment Python executable. Set `ML_SCRIPT_PATH` when the script is outside the default repository path.
+
+ML result API endpoints:
+
+```http
+GET /api/ml/model-comparison
+GET /api/ml/feature-importance
+GET /api/ml/feature-selection
+GET /api/ml/neural-network-results
+GET /api/ml/clustering-results
+GET /api/ml/clustering-points
+GET /api/ml/model-metadata
+GET /api/ml/summary
+GET /api/admin/ml/model-comparison
+GET /api/admin/ml/summary
+```
+
+The Models, Neural Network, and Clustering frontend pages read these endpoints and no longer rely on mock ML metrics.
 
 ## Auth And Roles
 

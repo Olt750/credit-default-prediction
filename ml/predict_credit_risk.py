@@ -4,6 +4,7 @@ from pathlib import Path
 
 import joblib
 import numpy as np
+import pandas as pd
 
 
 FEATURE_ORDER = [
@@ -32,7 +33,9 @@ FEATURE_ORDER = [
 
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR / "models" / "credit_risk_model.pkl"
+BEST_MODEL_PATH = BASE_DIR / "models" / "best_credit_model.pkl"
 SCALER_PATH = BASE_DIR / "models" / "scaler.pkl"
+FEATURE_COLUMNS_PATH = BASE_DIR / "models" / "feature_columns.pkl"
 
 
 def clamp(value, minimum, maximum):
@@ -137,17 +140,21 @@ def build_explanation(level, score, payload):
 
 
 def predict(payload):
-    model = joblib.load(MODEL_PATH)
+    model_path = BEST_MODEL_PATH if BEST_MODEL_PATH.exists() else MODEL_PATH
+    model = joblib.load(model_path)
     scaler = joblib.load(SCALER_PATH)
     features = map_to_german_credit_features(payload)
+    feature_columns = joblib.load(FEATURE_COLUMNS_PATH) if FEATURE_COLUMNS_PATH.exists() else FEATURE_ORDER
+    feature_frame = pd.DataFrame(features, columns=feature_columns)
     model_name = type(model).__name__.lower()
 
-    # The current saved RandomForestClassifier was trained on raw German Credit
-    # features in the notebook. The scaler is still loaded because it is part of
-    # the model artifact set, but it should only be applied to scaled estimators.
-    model_features = features
-    if not any(name in model_name for name in ("forest", "tree")):
-        model_features = scaler.transform(features)
+    # Newer training saves a scikit-learn Pipeline that already contains any
+    # needed preprocessing. Legacy standalone estimators still use the scaler
+    # when appropriate so the existing backend integration keeps working.
+    model_features = feature_frame
+    is_pipeline = hasattr(model, "named_steps")
+    if not is_pipeline and not any(name in model_name for name in ("forest", "tree")):
+        model_features = scaler.transform(feature_frame)
 
     prediction = int(model.predict(model_features)[0])
     if hasattr(model, "predict_proba"):

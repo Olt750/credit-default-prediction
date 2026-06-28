@@ -1,0 +1,21 @@
+feature,description,importance
+hoehe,credit amount,0.1258172679043905
+laufkont,checking account status,0.12463141824963607
+laufzeit,credit duration in months,0.10206317113731829
+alter,age in years,0.10051004625763446
+verw,loan purpose,0.061351696229870814
+sparkont,savings account status,0.05746538978087286
+moral,credit history,0.05212169982281221
+beszeit,employment duration,0.04972661393605764
+verm,property category,0.044680365081180305
+rate,installment rate as income percentage,0.04208334812628928
+wohnzeit,years at current residence,0.03766209184564216
+beruf,job category,0.034698282316291726
+famges,personal status and sex,0.03453164522458737
+weitkred,other installment plans,0.023902932666609922
+wohn,housing status,0.023375710386866925
+buerge,other debtors or guarantors,0.02226061779413209
+bishkred,number of existing credits,0.021382208487239648
+telef,telephone ownership,0.018685320114863048
+pers,number of liable people,0.015037528535641637
+gastarb,foreign worker indicator,0.008012646102062983
