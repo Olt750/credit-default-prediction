@@ -574,7 +574,7 @@ namespace CreditDefault.Api.Migrations
             var permissionNames = new[] { "users.read", "users.manage", "predictions.create", "predictions.read", "predictions.manage", "reports.read", "reports.generate", "settings.manage", "notifications.read", "files.manage" };
             var permissionIds = permissionNames.Select((_, index) => Guid.Parse($"44444444-4444-4444-4444-{(index + 1).ToString().PadLeft(12, '0')}")).ToArray();
 
-            migrationBuilder.InsertData("Roles", new[] { "Id", "Name", "Description", "CreatedAt", "UpdatedAt" }, new object[,]
+            migrationBuilder.InsertData("Roles", new[] { "Id", "Name", "Description", "CreatedAt", "UpdatedAt" }, new[] { "uniqueidentifier", "nvarchar(64)", "nvarchar(max)", "datetime2", "datetime2" }, new object[,]
             {
                 { adminRoleId, "Admin", "Full system administration", seedTime, seedTime },
                 { userRoleId, "User", "Standard credit-risk applicant", seedTime, seedTime },
@@ -583,8 +583,8 @@ namespace CreditDefault.Api.Migrations
 
             for (var i = 0; i < permissionNames.Length; i++)
             {
-                migrationBuilder.InsertData("Permissions", new[] { "Id", "Name", "Description", "CreatedAt", "UpdatedAt" }, new object[] { permissionIds[i], permissionNames[i], permissionNames[i], seedTime, seedTime });
-                migrationBuilder.InsertData("RolePermissions", new[] { "RoleId", "PermissionId", "CreatedAt", "CreatedBy" }, new object[] { adminRoleId, permissionIds[i], seedTime, null });
+                migrationBuilder.InsertData("Permissions", new[] { "Id", "Name", "Description", "CreatedAt", "UpdatedAt" }, new[] { "uniqueidentifier", "nvarchar(128)", "nvarchar(max)", "datetime2", "datetime2" }, new object[] { permissionIds[i], permissionNames[i], permissionNames[i], seedTime, seedTime });
+                migrationBuilder.InsertData("RolePermissions", new[] { "RoleId", "PermissionId", "CreatedAt", "CreatedBy" }, new[] { "uniqueidentifier", "uniqueidentifier", "datetime2", "uniqueidentifier" }, new object[] { adminRoleId, permissionIds[i], seedTime, null });
             }
 
             AddRolePermission(migrationBuilder, userRoleId, permissionIds[2], seedTime);
@@ -596,7 +596,7 @@ namespace CreditDefault.Api.Migrations
                 AddRolePermission(migrationBuilder, managerRoleId, permissionIds[index], seedTime);
             }
 
-            migrationBuilder.InsertData("LoanApplicationStatuses", new[] { "Id", "Name", "Description", "CreatedAt", "UpdatedAt" }, new object[,]
+            migrationBuilder.InsertData("LoanApplicationStatuses", new[] { "Id", "Name", "Description", "CreatedAt", "UpdatedAt" }, new[] { "uniqueidentifier", "nvarchar(450)", "nvarchar(max)", "datetime2", "datetime2" }, new object[,]
             {
                 { Guid.Parse("55555555-5555-5555-5555-000000000001"), "Draft", "Application is being prepared", seedTime, seedTime },
                 { Guid.Parse("55555555-5555-5555-5555-000000000002"), "Submitted", "Application submitted for review", seedTime, seedTime },
@@ -604,7 +604,7 @@ namespace CreditDefault.Api.Migrations
                 { Guid.Parse("55555555-5555-5555-5555-000000000004"), "Rejected", "Application rejected", seedTime, seedTime }
             });
 
-            migrationBuilder.InsertData("LoanTypes", new[] { "Id", "Name", "Description", "CreatedAt", "UpdatedAt" }, new object[,]
+            migrationBuilder.InsertData("LoanTypes", new[] { "Id", "Name", "Description", "CreatedAt", "UpdatedAt" }, new[] { "uniqueidentifier", "nvarchar(450)", "nvarchar(max)", "datetime2", "datetime2" }, new object[,]
             {
                 { Guid.Parse("66666666-6666-6666-6666-000000000001"), "Personal", "Personal loan", seedTime, seedTime },
                 { Guid.Parse("66666666-6666-6666-6666-000000000002"), "Auto", "Vehicle financing", seedTime, seedTime },
@@ -614,7 +614,7 @@ namespace CreditDefault.Api.Migrations
 
         private static void AddRolePermission(MigrationBuilder migrationBuilder, Guid roleId, Guid permissionId, DateTime seedTime)
         {
-            migrationBuilder.InsertData("RolePermissions", new[] { "RoleId", "PermissionId", "CreatedAt", "CreatedBy" }, new object[] { roleId, permissionId, seedTime, null });
+            migrationBuilder.InsertData("RolePermissions", new[] { "RoleId", "PermissionId", "CreatedAt", "CreatedBy" }, new[] { "uniqueidentifier", "uniqueidentifier", "datetime2", "uniqueidentifier" }, new object[] { roleId, permissionId, seedTime, null });
         }
     }
 }
