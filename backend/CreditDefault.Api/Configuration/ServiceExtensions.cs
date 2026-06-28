@@ -45,6 +45,11 @@ namespace CreditDefault.Api.Configuration
             services.AddScoped<NotificationService>();
             services.AddScoped<SettingService>();
             services.AddScoped<FileRecordService>();
+            services.AddScoped<TabularFileService>();
+            services.AddScoped<SearchService>();
+            services.AddScoped<ReportService>();
+            services.AddScoped<DataExportService>();
+            services.AddScoped<DataImportService>();
             return services;
         }
     }

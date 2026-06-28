@@ -2,8 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Eye, Pencil, Ban, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
-import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { searchList } from "@/services/additionalFeaturesApi";
 
 export const Route = createFileRoute("/_app/users")({
   component: UsersPage,
@@ -27,6 +27,7 @@ type AppUserRow = {
   name?: string;
   email: string;
   role: "Admin" | "User" | "Analyst";
+  roles?: string[];
   createdAt?: string;
 };
 
@@ -36,6 +37,12 @@ function UsersPage() {
   const [users, setUsers] = useState<AppUserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [keyword, setKeyword] = useState("");
+  const [role, setRole] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState("desc");
 
   useEffect(() => {
     if (ready && user && user.role !== "Admin") navigate({ to: "/dashboard" });
@@ -49,13 +56,16 @@ function UsersPage() {
       setError(null);
 
       try {
-        const res = await apiFetch("/admin/users");
-
-        if (!res.ok) {
-          throw new Error("Failed to load users.");
-        }
-
-        setUsers(await res.json());
+        const data = await searchList<AppUserRow>("users", {
+          keyword,
+          role,
+          page,
+          pageSize: 10,
+          sortBy,
+          sortDirection,
+        });
+        setUsers(data.items);
+        setTotalPages(data.totalPages || 1);
       } catch (err: any) {
         setError(err.message || "Failed to load users.");
       } finally {
@@ -64,7 +74,7 @@ function UsersPage() {
     }
 
     loadUsers();
-  }, [ready, user]);
+  }, [ready, user, keyword, role, page, sortBy, sortDirection]);
 
   if (!user || user.role !== "Admin") return null;
 
@@ -88,6 +98,30 @@ function UsersPage() {
           {error}
         </div>
       )}
+
+      <div className="glass rounded-2xl p-4 mb-4 flex flex-wrap gap-3">
+        <input
+          value={keyword}
+          onChange={(e) => { setKeyword(e.target.value); setPage(1); }}
+          placeholder="Search name or email"
+          className="h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm flex-1 min-w-56"
+        />
+        <select value={role} onChange={(e) => { setRole(e.target.value); setPage(1); }} className="h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm">
+          <option value="">All roles</option>
+          <option>Admin</option>
+          <option>Manager</option>
+          <option>User</option>
+        </select>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm">
+          <option value="createdAt">Created</option>
+          <option value="email">Email</option>
+          <option value="fullName">Name</option>
+          <option value="role">Role</option>
+        </select>
+        <button onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")} className="h-10 px-3 rounded-lg border border-border text-sm">
+          {sortDirection === "asc" ? "Asc" : "Desc"}
+        </button>
+      </div>
 
       <div className="bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] overflow-hidden">
         <div className="overflow-x-auto">
@@ -176,6 +210,18 @@ function UsersPage() {
           </table>
         </div>
       </div>
+
+      <Pagination page={page} totalPages={totalPages} onPage={setPage} />
     </>
+  );
+}
+
+function Pagination({ page, totalPages, onPage }: { page: number; totalPages: number; onPage: (page: number) => void }) {
+  return (
+    <div className="mt-4 flex justify-end gap-2 text-sm">
+      <button disabled={page <= 1} onClick={() => onPage(page - 1)} className="h-9 px-3 rounded-lg border border-border disabled:opacity-50">Previous</button>
+      <span className="h-9 px-3 flex items-center text-muted-foreground">Page {page} of {totalPages}</span>
+      <button disabled={page >= totalPages} onClick={() => onPage(page + 1)} className="h-9 px-3 rounded-lg border border-border disabled:opacity-50">Next</button>
+    </div>
   );
 }

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { RiskBadge, StatusBadge } from "@/components/app/RiskBadge";
-import { apiFetch } from "@/lib/api";
+import { searchList } from "@/services/additionalFeaturesApi";
 
 export const Route = createFileRoute("/_app/predictions")({
   component: PredictionsPage,
@@ -26,6 +26,13 @@ function PredictionsPage() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [keyword, setKeyword] = useState("");
+  const [riskLevel, setRiskLevel] = useState("");
+  const [minRiskScore, setMinRiskScore] = useState("");
+  const [maxRiskScore, setMaxRiskScore] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [sortDirection, setSortDirection] = useState("desc");
 
   useEffect(() => {
     async function fetchPredictions() {
@@ -33,14 +40,17 @@ function PredictionsPage() {
       setError(null);
 
       try {
-        const res = await apiFetch("/predictions/my");
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch predictions");
-        }
-
-        const data = await res.json();
-        const arr = Array.isArray(data) ? data : data.predictions || [];
+        const data = await searchList<any>("predictions", {
+          keyword,
+          riskLevel,
+          minRiskScore,
+          maxRiskScore,
+          page,
+          pageSize: 10,
+          sortBy: "createdAt",
+          sortDirection,
+        });
+        const arr = data.items ?? [];
 
         const mapped: Prediction[] = arr.map((p: any) => ({
           id: String(p.id),
@@ -55,6 +65,7 @@ function PredictionsPage() {
         }));
 
         setPredictions(mapped);
+        setTotalPages(data.totalPages || 1);
       } catch (err: any) {
         setError(err.message || "Failed to load predictions");
       } finally {
@@ -63,7 +74,7 @@ function PredictionsPage() {
     }
 
     fetchPredictions();
-  }, []);
+  }, [keyword, riskLevel, minRiskScore, maxRiskScore, page, sortDirection]);
 
   const detail = predictions.find((p) => p.id === open) ?? predictions[0];
 
@@ -75,10 +86,6 @@ function PredictionsPage() {
     return <div className="p-10 text-center text-destructive">{error}</div>;
   }
 
-  if (!predictions.length) {
-    return <div className="p-10 text-center">No predictions found.</div>;
-  }
-
   return (
     <>
       <PageHeader
@@ -87,26 +94,18 @@ function PredictionsPage() {
       />
 
       <div className="glass rounded-2xl p-4 mb-4 flex flex-wrap gap-3">
-        {[
-          { label: "Risk Level", options: ["All", "Low", "Medium", "High"] },
-          {
-            label: "Model",
-            options: ["All", "Logistic Regression", "Decision Tree", "Random Forest", "Neural Network"],
-          },
-          { label: "Status", options: ["All", "Approved", "Pending", "Rejected"] },
-          { label: "Date Range", options: ["Last 7 days", "Last 30 days", "Last 90 days", "All time"] },
-        ].map((f) => (
-          <div key={f.label} className="flex-1 min-w-40">
-            <label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {f.label}
-            </label>
-            <select className="mt-1 w-full h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm">
-              {f.options.map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
-          </div>
-        ))}
+        <input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); }} placeholder="Search predictions" className="h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm flex-1 min-w-56" />
+        <select value={riskLevel} onChange={(e) => { setRiskLevel(e.target.value); setPage(1); }} className="h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm">
+          <option value="">All risk</option>
+          <option>Low</option>
+          <option>Medium</option>
+          <option>High</option>
+        </select>
+        <input value={minRiskScore} onChange={(e) => setMinRiskScore(e.target.value)} type="number" placeholder="Min score" className="h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm w-28" />
+        <input value={maxRiskScore} onChange={(e) => setMaxRiskScore(e.target.value)} type="number" placeholder="Max score" className="h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm w-28" />
+        <button onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")} className="h-10 px-3 rounded-lg border border-border text-sm">
+          {sortDirection === "asc" ? "Oldest" : "Newest"}
+        </button>
       </div>
 
       <div className="glass rounded-2xl p-5">
@@ -176,6 +175,7 @@ function PredictionsPage() {
           </div>
         </div>
       )}
+      <Pagination page={page} totalPages={totalPages} onPage={setPage} />
     </>
   );
 }
@@ -205,6 +205,11 @@ function ClickableTable({ predictions }: { predictions: Prediction[] }) {
         </thead>
 
         <tbody>
+          {!predictions.length && (
+            <tr>
+              <td colSpan={9} className="py-6 px-5 text-center text-muted-foreground">No predictions found.</td>
+            </tr>
+          )}
           {predictions.map((r) => (
             <tr
               key={r.id}
@@ -228,6 +233,16 @@ function ClickableTable({ predictions }: { predictions: Prediction[] }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function Pagination({ page, totalPages, onPage }: { page: number; totalPages: number; onPage: (page: number) => void }) {
+  return (
+    <div className="mt-4 flex justify-end gap-2 text-sm">
+      <button disabled={page <= 1} onClick={() => onPage(page - 1)} className="h-9 px-3 rounded-lg border border-border disabled:opacity-50">Previous</button>
+      <span className="h-9 px-3 flex items-center text-muted-foreground">Page {page} of {totalPages}</span>
+      <button disabled={page >= totalPages} onClick={() => onPage(page + 1)} className="h-9 px-3 rounded-lg border border-border disabled:opacity-50">Next</button>
     </div>
   );
 }

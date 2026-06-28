@@ -19,7 +19,7 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
   const token = getAuthToken();
   const headers = new Headers(init.headers);
 
-  if (!headers.has("Content-Type") && init.body) {
+  if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -36,7 +36,7 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
     const refreshed = await refreshAccessToken();
     if (refreshed) {
       const retryHeaders = new Headers(init.headers);
-      if (!retryHeaders.has("Content-Type") && init.body) {
+      if (!retryHeaders.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
         retryHeaders.set("Content-Type", "application/json");
       }
       retryHeaders.set("Authorization", `Bearer ${localStorage.getItem(TOKEN_KEY)}`);

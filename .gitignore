@@ -2,6 +2,7 @@
 **/bin/
 **/obj/
 frontend/dist/
+backend/CreditDefault.Api/exports/
 
 # Dependencies
 node_modules/

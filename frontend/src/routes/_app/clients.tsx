@@ -4,6 +4,7 @@ import { Sparkles, AlertTriangle, Info } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { RiskBadge } from "@/components/app/RiskBadge";
 import { apiFetch } from "@/lib/api";
+import { searchList } from "@/services/additionalFeaturesApi";
 import {
   calculateFinancials,
   initialFinancialProfileForm,
@@ -41,6 +42,16 @@ type PredictionResult = {
   explanation: string;
 };
 
+type ClientProfileRow = {
+  id: string;
+  userName: string;
+  userEmail: string;
+  annualIncome: number;
+  creditScore: number;
+  employmentStatus: string;
+  debtToIncomeRatio: number;
+};
+
 function ClientAnalysisPage() {
   const [form, setForm] = useState<FinancialProfileForm>(initialFinancialProfileForm);
   const [validationErrors, setValidationErrors] = useState<FinancialProfileErrors>({});
@@ -48,6 +59,11 @@ function ClientAnalysisPage() {
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [clientRows, setClientRows] = useState<ClientProfileRow[]>([]);
+  const [clientKeyword, setClientKeyword] = useState("");
+  const [clientEmployment, setClientEmployment] = useState("");
+  const [clientPage, setClientPage] = useState(1);
+  const [clientTotalPages, setClientTotalPages] = useState(1);
   const financials = useMemo(() => calculateFinancials(form), [form]);
 
   useEffect(() => {
@@ -85,6 +101,23 @@ function ClientAnalysisPage() {
 
     loadProfile();
   }, []);
+
+  useEffect(() => {
+    async function loadClientRows() {
+      const result = await searchList<ClientProfileRow>("client-profiles", {
+        keyword: clientKeyword,
+        employmentStatus: clientEmployment,
+        page: clientPage,
+        pageSize: 8,
+        sortBy: "createdAt",
+        sortDirection: "desc",
+      });
+      setClientRows(result.items);
+      setClientTotalPages(result.totalPages || 1);
+    }
+
+    loadClientRows().catch(() => undefined);
+  }, [clientKeyword, clientEmployment, clientPage]);
 
   async function analyze(e: React.FormEvent) {
     e.preventDefault();
@@ -283,6 +316,51 @@ function ClientAnalysisPage() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="mt-4 bg-card border border-border rounded-2xl shadow-[var(--shadow-card)] overflow-hidden">
+        <div className="p-4 border-b border-border flex flex-wrap gap-3 items-center">
+          <div className="font-semibold mr-auto">Client profiles</div>
+          <input value={clientKeyword} onChange={(e) => { setClientKeyword(e.target.value); setClientPage(1); }} placeholder="Search name, email, status" className="h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm min-w-56" />
+          <select value={clientEmployment} onChange={(e) => { setClientEmployment(e.target.value); setClientPage(1); }} className="h-10 px-3 rounded-lg bg-muted/40 border border-border text-sm">
+            <option value="">All employment</option>
+            <option>Employed</option>
+            <option>Self-employed</option>
+            <option>Unemployed</option>
+            <option>Student</option>
+            <option>Retired</option>
+          </select>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/40">
+                <th className="py-3 px-5 font-medium">Client</th>
+                <th className="py-3 pr-4 font-medium">Income</th>
+                <th className="py-3 pr-4 font-medium">Credit Score</th>
+                <th className="py-3 pr-4 font-medium">Employment</th>
+                <th className="py-3 pr-5 font-medium">DTI</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clientRows.map((row) => (
+                <tr key={row.id} className="border-b border-border last:border-0 hover:bg-muted/30">
+                  <td className="py-3 px-5"><div className="font-medium">{row.userName || row.userEmail}</div><div className="text-xs text-muted-foreground">{row.userEmail}</div></td>
+                  <td className="py-3 pr-4">EUR {Number(row.annualIncome || 0).toLocaleString()}</td>
+                  <td className="py-3 pr-4">{row.creditScore}</td>
+                  <td className="py-3 pr-4">{row.employmentStatus}</td>
+                  <td className="py-3 pr-5">{(Number(row.debtToIncomeRatio || 0) * 100).toFixed(2)}%</td>
+                </tr>
+              ))}
+              {!clientRows.length && <tr><td colSpan={5} className="py-6 px-5 text-center text-muted-foreground">No client profiles found.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <div className="p-4 flex justify-end gap-2 text-sm">
+          <button disabled={clientPage <= 1} onClick={() => setClientPage(clientPage - 1)} className="h-9 px-3 rounded-lg border border-border disabled:opacity-50">Previous</button>
+          <span className="h-9 px-3 flex items-center text-muted-foreground">Page {clientPage} of {clientTotalPages}</span>
+          <button disabled={clientPage >= clientTotalPages} onClick={() => setClientPage(clientPage + 1)} className="h-9 px-3 rounded-lg border border-border disabled:opacity-50">Next</button>
         </div>
       </div>
     </>

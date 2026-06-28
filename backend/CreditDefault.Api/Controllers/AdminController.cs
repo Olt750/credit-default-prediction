@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CreditDefault.Api.Interfaces;
 using CreditDefault.Api.Services;
+using CreditDefault.Api.DTOs;
 
 namespace CreditDefault.Api.Controllers
 {
@@ -31,7 +32,20 @@ namespace CreditDefault.Api.Controllers
         }
 
         [HttpGet("users")]
-        public async Task<IActionResult> GetUsers() => Ok(await _userRepo.GetAllAsync());
+        public async Task<IActionResult> GetUsers()
+        {
+            var users = await _userRepo.GetAllAsync();
+            return Ok(users.Select(u => new UserListItemDto
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                Email = u.Email,
+                PhoneNumber = u.PhoneNumber,
+                Role = u.UserRoles.Select(ur => ur.Role.Name).FirstOrDefault() ?? u.Role,
+                Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList(),
+                CreatedAt = u.CreatedAt
+            }));
+        }
 
         [HttpGet("predictions")]
         public async Task<IActionResult> GetPredictions() => Ok(await _predictionRepo.GetAllAsync());

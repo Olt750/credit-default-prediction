@@ -89,6 +89,8 @@ Authenticated clients join `user:{userId}` and role groups such as `role:Admin`.
 - `PredictionCompleted`
 - `HighRiskAlert`
 - `SettingsChanged`
+- `ReportGenerated`
+- `ImportCompleted`
 
 ## Frontend Setup
 
@@ -103,6 +105,103 @@ Build the frontend:
 ```powershell
 npm run build
 ```
+
+## Dynamic Reports
+
+Reports are generated from real SQL prediction, user, model metric, and report data. The Reports page is available at:
+
+```http
+/reports
+```
+
+Supported report types:
+
+- Prediction Summary Report
+- Risk Distribution Report
+- User Prediction History Report
+- High Risk Applications Report
+- Model Performance Report
+
+Supported export formats:
+
+- CSV
+- Excel-compatible XLSX
+- JSON
+
+PDF endpoints are intentionally not implemented until a proper PDF renderer is added.
+
+Main report endpoints:
+
+```http
+GET /api/reports
+POST /api/reports/generate
+GET /api/reports/{id}
+GET /api/reports/{id}/download
+DELETE /api/reports/{id}
+```
+
+Reports store metadata in SQL Server and generated files under `backend/CreditDefault.Api/exports/reports`, which is ignored by Git. Redis caches report summaries when available. SignalR sends `ReportGenerated`, and high-risk admin notifications are emitted when appropriate.
+
+## Export And Import
+
+The app supports real export/import for these lists:
+
+- Users
+- Predictions
+- Client Profiles
+- Notifications
+- Reports
+
+Admin-only:
+
+- Users import/export
+- Audit logs export
+- System-wide exports
+
+Export endpoints:
+
+```http
+GET /api/export/users?format=csv|xlsx|json
+GET /api/export/predictions?format=csv|xlsx|json
+GET /api/export/client-profiles?format=csv|xlsx|json
+GET /api/export/notifications?format=csv|xlsx|json
+GET /api/export/reports?format=csv|xlsx|json
+GET /api/export/audit-logs?format=csv|xlsx|json
+```
+
+Import endpoints:
+
+```http
+POST /api/import/users
+POST /api/import/predictions
+POST /api/import/client-profiles
+POST /api/import/notifications
+POST /api/import/reports
+```
+
+Imports accept CSV and JSON. Excel import is rejected with a clear message until a safe parser is added. Import responses include total, inserted, skipped, failed, and errors. Password hashes, refresh tokens, JWT secrets, and config secrets are never exported. User imports require a `Password` field, which is hashed before storage.
+
+## Advanced Search
+
+The backend supports keyword search, filters, sorting, and pagination for:
+
+- Users
+- Predictions
+- Client Profiles
+- Notifications
+- Reports
+
+Search endpoints:
+
+```http
+GET /api/search/users
+GET /api/search/predictions
+GET /api/search/client-profiles
+GET /api/search/notifications
+GET /api/search/reports
+```
+
+Users can only search/export their own predictions, profile, notifications, and reports. Admin can access all supported lists. Manager can access reports and predictions where authorization allows it. Frontend search/filter controls were added to Users, Predictions, Client Analysis, Notifications, and Reports.
 
 ## ML Setup
 
