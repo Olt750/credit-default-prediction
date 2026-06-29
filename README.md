@@ -2,6 +2,27 @@
 
 CreditIQ is a credit default / credit risk prediction platform built with a .NET Core Web API backend, a React Vite frontend, and a Python ML script integration. It keeps the existing login, register, dashboard, client profile, prediction, ML prediction, and prediction history flow while adding the Lab Course 2 technical foundation.
 
+## Technology Stack
+
+- Backend: ASP.NET Core Web API, EF Core, SQL Server, JWT authentication, SignalR
+- Frontend: React, Vite, TanStack Router, TypeScript, Tailwind CSS
+- ML: Python, pandas, scikit-learn, matplotlib, joblib
+- NoSQL/cache: Redis
+- Documentation/API testing: Swagger at `http://localhost:5086/swagger`
+
+## Main Features
+
+- User registration, login, refresh-token rotation, logout, and protected routes
+- Client financial profile capture and debt-to-income calculations
+- ML-backed credit default prediction with saved prediction history
+- User/admin dashboards with real SQL-backed summaries
+- Role and permission foundation for Admin, Manager, and User
+- Real-time notifications through SignalR
+- Redis-backed dashboard, prediction, notification, and report caching with SQL fallback
+- Dynamic reports, CSV/XLSX/JSON exports, validated imports, and advanced search
+- Admin user management with view, invite/create, edit, role update, and activate/deactivate actions
+- ML experiment reporting for classifiers, neural networks, feature selection, and clustering
+
 ## Backend Setup
 
 ```powershell
@@ -319,7 +340,7 @@ GET /api/admin/ml/model-comparison
 GET /api/admin/ml/summary
 ```
 
-The Models, Neural Network, and Clustering frontend pages read these endpoints and no longer rely on mock ML metrics.
+The Models, Neural Network, and Clustering frontend pages read these endpoints and display generated ML metrics from `ml/results`.
 
 ## Auth And Roles
 
@@ -332,6 +353,32 @@ The Lab Course 2 foundation seeds these roles:
 It also seeds permissions such as `users.read`, `users.manage`, `predictions.create`, `predictions.read`, `predictions.manage`, `reports.read`, `reports.generate`, `settings.manage`, `notifications.read`, and `files.manage`.
 
 JWTs include role claims and permission claims. Existing `[Authorize(Roles = "Admin")]` authorization remains supported.
+
+Default development admin seed:
+
+```text
+Email: admin@credit.com
+Password: Admin123!
+```
+
+Override these values for local development with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Do not use these credentials in production.
+
+## Admin User Management
+
+The Users page uses real backend endpoints and does not perform browser-only actions:
+
+```http
+GET /api/search/users
+GET /api/admin/users
+GET /api/admin/users/{id}
+POST /api/admin/users/invite
+PUT /api/admin/users/{id}
+PUT /api/admin/users/{id}/status
+PUT /api/admin/users/{id}/roles
+DELETE /api/admin/users/{id}
+```
+
+All admin user mutations are Admin-only, avoid exposing password hashes or refresh tokens, and create audit log entries. Deleting a user follows the project soft-deactivation pattern.
 
 ## Prediction Flow
 
@@ -355,3 +402,35 @@ The backend validates the request, sends the JSON payload to the Python ML scrip
 ## Lab Course 2 Foundation
 
 This step adds normalized roles/permissions, hashed refresh tokens, audit logging for mutating requests, notification/settings/file foundations, and expanded credit-risk domain tables so the database reaches the required relational table count without replacing the existing app architecture.
+
+Covered Lab Course 2 requirements:
+
+- Expanded relational SQL schema with users, roles, permissions, refresh tokens, audit logs, notifications, settings, files, reports, and credit-risk domain tables
+- Redis NoSQL integration for cache-backed application data
+- SignalR real-time notifications
+- Dynamic report generation
+- Data export and import
+- Advanced search, filtering, sorting, and pagination
+- Role-based and permission-ready authorization
+- Audit logging for important mutating and admin actions
+
+Covered Machine Learning requirements:
+
+- Real German Credit dataset preprocessing
+- Classification model comparison with tuning
+- Feature selection and feature importance
+- Neural network architecture comparison
+- KMeans clustering experiments
+- Saved model artifacts and result files used by backend/frontend pages
+
+## Troubleshooting
+
+- If `dotnet ef` is missing, install it with `dotnet tool install --global dotnet-ef`.
+- If the backend cannot find the database connection string, set `DB_CONNECTION_STRING` or use `appsettings.Development.json`.
+- If Redis is offline, the API logs cache warnings and continues using SQL Server.
+- If frontend API calls fail locally, confirm the backend is running on `http://localhost:5086`.
+- If the ML prediction endpoint fails, confirm `PYTHON_EXECUTABLE_PATH`, `ML_SCRIPT_PATH`, and the files under `ml/models` exist.
+
+## GitHub Submission Note
+
+Generated folders such as `bin`, `obj`, `dist`, `node_modules`, `.venv`, report exports, and local `.env` files are ignored and should not be committed.

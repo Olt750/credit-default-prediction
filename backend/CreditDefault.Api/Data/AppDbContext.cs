@@ -54,6 +54,7 @@ namespace CreditDefault.Api.Data
             {
                 entity.HasIndex(u => u.Email).IsUnique();
                 entity.HasIndex(u => u.CreatedAt);
+                entity.HasIndex(u => u.IsActive);
                 entity.Property(u => u.FullName).HasMaxLength(160);
                 entity.Property(u => u.Email).HasMaxLength(256);
                 entity.Property(u => u.Role).HasMaxLength(64);

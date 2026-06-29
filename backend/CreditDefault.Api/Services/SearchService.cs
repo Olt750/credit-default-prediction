@@ -32,6 +32,7 @@ namespace CreditDefault.Api.Services
                 query = query.Where(u => u.Role == request.Role || u.UserRoles.Any(ur => ur.Role.Name == request.Role));
             }
 
+            if (request.IsActive.HasValue) query = query.Where(u => u.IsActive == request.IsActive.Value);
             if (request.CreatedFrom.HasValue) query = query.Where(u => u.CreatedAt >= request.CreatedFrom.Value);
             if (request.CreatedTo.HasValue) query = query.Where(u => u.CreatedAt <= request.CreatedTo.Value);
 
@@ -55,6 +56,7 @@ namespace CreditDefault.Api.Services
                 PhoneNumber = u.PhoneNumber,
                 Role = u.UserRoles.Select(ur => ur.Role.Name).FirstOrDefault() ?? u.Role,
                 Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList(),
+                IsActive = u.IsActive,
                 CreatedAt = u.CreatedAt
             }), request);
         }

@@ -18,34 +18,108 @@ namespace CreditDefault.Api.Controllers
         private readonly IPredictionRepository _predictionRepo;
         private readonly IAuditLogRepository _auditLogRepo;
         private readonly NotificationService _notificationService;
+        private readonly AdminUserService _adminUserService;
 
         public AdminController(
             IUserRepository userRepo,
             IPredictionRepository predictionRepo,
             IAuditLogRepository auditLogRepo,
-            NotificationService notificationService)
+            NotificationService notificationService,
+            AdminUserService adminUserService)
         {
             _userRepo = userRepo;
             _predictionRepo = predictionRepo;
             _auditLogRepo = auditLogRepo;
             _notificationService = notificationService;
+            _adminUserService = adminUserService;
         }
 
         [HttpGet("users")]
-        public async Task<IActionResult> GetUsers()
+        public async Task<IActionResult> GetUsers() => Ok(await _adminUserService.GetUsersAsync());
+
+        [HttpGet("users/{id:guid}")]
+        public async Task<IActionResult> GetUser(Guid id)
         {
-            var users = await _userRepo.GetAllAsync();
-            return Ok(users.Select(u => new UserListItemDto
-            {
-                Id = u.Id,
-                FullName = u.FullName,
-                Email = u.Email,
-                PhoneNumber = u.PhoneNumber,
-                Role = u.UserRoles.Select(ur => ur.Role.Name).FirstOrDefault() ?? u.Role,
-                Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList(),
-                CreatedAt = u.CreatedAt
-            }));
+            var user = await _adminUserService.GetUserAsync(id, GetCurrentUserId(), GetPerformedBy(), GetIpAddress());
+            return user == null ? NotFound(new { error = "User was not found." }) : Ok(user);
         }
+
+        [HttpPost("users/invite")]
+        public async Task<IActionResult> InviteUser(AdminUserInviteRequest request)
+        {
+            if (!ModelState.IsValid) return ValidationProblem(ModelState);
+            try
+            {
+                return Ok(await _adminUserService.InviteAsync(request, GetCurrentUserId(), GetPerformedBy(), GetIpAddress()));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpPut("users/{id:guid}")]
+        public async Task<IActionResult> UpdateUser(Guid id, AdminUserUpdateRequest request)
+        {
+            if (!ModelState.IsValid) return ValidationProblem(ModelState);
+            try
+            {
+                var user = await _adminUserService.UpdateAsync(id, request, GetCurrentUserId(), GetPerformedBy(), GetIpAddress());
+                return user == null ? NotFound(new { error = "User was not found." }) : Ok(user);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpPut("users/{id:guid}/status")]
+        public async Task<IActionResult> UpdateUserStatus(Guid id, AdminUserStatusRequest request)
+        {
+            try
+            {
+                var user = await _adminUserService.SetStatusAsync(id, request.IsActive, GetCurrentUserId(), GetPerformedBy(), GetIpAddress());
+                return user == null ? NotFound(new { error = "User was not found." }) : Ok(user);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpPut("users/{id:guid}/roles")]
+        public async Task<IActionResult> UpdateUserRoles(Guid id, AdminUserRolesRequest request)
+        {
+            if (!ModelState.IsValid) return ValidationProblem(ModelState);
+            try
+            {
+                var user = await _adminUserService.SetRolesAsync(id, request, GetCurrentUserId(), GetPerformedBy(), GetIpAddress());
+                return user == null ? NotFound(new { error = "User was not found." }) : Ok(user);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpDelete("users/{id:guid}")]
+        public Task<IActionResult> DeleteUser(Guid id) =>
+            UpdateUserStatus(id, new AdminUserStatusRequest { IsActive = false });
+
+        private Guid GetCurrentUserId()
+        {
+            var userId = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+            return Guid.Parse(userId!);
+        }
+
+        private string GetPerformedBy() =>
+            User.FindFirstValue(System.Security.Claims.ClaimTypes.Email)
+            ?? User.Identity?.Name
+            ?? User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)
+            ?? "UnknownUser";
+
+        private string GetIpAddress() => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
 
         [HttpGet("predictions")]
         public async Task<IActionResult> GetPredictions() => Ok(await _predictionRepo.GetAllAsync());

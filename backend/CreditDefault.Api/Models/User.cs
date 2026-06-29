@@ -11,6 +11,7 @@ namespace CreditDefault.Api.Models
         public string PasswordHash { get; set; }
         public string PhoneNumber { get; set; }
         public string Role { get; set; } = "User";
+        public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public ICollection<Prediction> Predictions { get; set; } = new List<Prediction>();

@@ -115,7 +115,56 @@ namespace CreditDefault.Api.DTOs
         public string PhoneNumber { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
         public IReadOnlyList<string> Roles { get; set; } = [];
+        public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
+    }
+
+    public class AdminUserDetailDto : UserListItemDto
+    {
+        public DateTime UpdatedAt { get; set; }
+        public int PredictionCount { get; set; }
+        public int NotificationCount { get; set; }
+        public bool HasClientProfile { get; set; }
+    }
+
+    public class AdminUserInviteRequest
+    {
+        [Required, MaxLength(160)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required, EmailAddress, MaxLength(256)]
+        public string Email { get; set; } = string.Empty;
+
+        [MaxLength(64)]
+        public string? PhoneNumber { get; set; }
+
+        [MinLength(8)]
+        public string? Password { get; set; }
+
+        public IReadOnlyList<string> Roles { get; set; } = ["User"];
+    }
+
+    public class AdminUserUpdateRequest
+    {
+        [Required, MaxLength(160)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required, EmailAddress, MaxLength(256)]
+        public string Email { get; set; } = string.Empty;
+
+        [MaxLength(64)]
+        public string? PhoneNumber { get; set; }
+    }
+
+    public class AdminUserStatusRequest
+    {
+        public bool IsActive { get; set; }
+    }
+
+    public class AdminUserRolesRequest
+    {
+        [MinLength(1)]
+        public IReadOnlyList<string> Roles { get; set; } = ["User"];
     }
 
     public class PredictionListItemDto

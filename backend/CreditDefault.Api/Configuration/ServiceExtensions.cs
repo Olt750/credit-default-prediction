@@ -35,6 +35,7 @@ namespace CreditDefault.Api.Configuration
             services.AddScoped<JwtService>();
             services.AddScoped<PasswordService>();
             services.AddScoped<AuthService>();
+            services.AddScoped<AdminUserService>();
             services.AddScoped<DevelopmentAdminSeeder>();
             services.AddScoped<RefreshTokenService>();
             services.AddScoped<PredictionEngine>();

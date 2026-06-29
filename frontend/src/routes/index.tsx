@@ -231,11 +231,11 @@ function Index() {
         <div className="rounded-3xl p-10 lg:p-14 text-center relative overflow-hidden gradient-hero">
           <Layers className="size-10 mx-auto text-white/90" />
           <h3 className="text-2xl md:text-3xl font-semibold mt-4 text-white">
-            Explore the platform with mock data
+            Explore real credit risk workflows
           </h3>
           <p className="text-white/85 mt-3 max-w-xl mx-auto">
-            Walk through dashboards, predictions, and model comparisons — everything you need
-            before connecting your own data pipeline.
+            Walk through dashboards, predictions, reports, exports, and model comparisons backed
+            by the project database and trained ML artifacts.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link to={user ? "/dashboard" : "/login"} className="inline-flex h-12 px-6 items-center rounded-xl font-medium bg-white text-primary hover:bg-white/90 transition">
@@ -250,8 +250,8 @@ function Index() {
 
       <footer className="border-t border-border py-8">
         <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-between gap-4 text-xs text-muted-foreground">
-          <div>© 2026 CreditIQ — Frontend template, mock data only.</div>
-          <div>Parashikimi i Mospagimit të Kredisë</div>
+          <div>2026 CreditIQ - Credit default prediction platform.</div>
+          <div>Parashikimi i Mospagimit te Kredise</div>
         </div>
       </footer>
     </div>
